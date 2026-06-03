@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FREDDY CHARLES // LHC SIMULATOR</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- DESIGN SYSTEM TOKENS --- */
+        :root {
+            --bg-color: #08080a;
+            --text-primary: #ffffff;
+            --text-secondary: #8e8e93;
+            --swiss-red: #ff3b30;
+            --border-color: #242426;
+            --font-sans: 'Inter', -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            
+            /* Particle Colors */
+            --p-electron: #00ffff;
+            --p-muon: #ff3b30; /* Aligned with Swiss Red */
+            --p-photon: #ffff00;
+            --p-hadron: #00ff44;
+        }
+
+        /* --- BASE RESET --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            border-radius: 0 !important;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.5;
+            overflow: hidden; /* Prevent scrolling so canvas is static */
+            user-select: none;
+        }
+
+        /* --- PHYSICS INTERACTIVE OVERLAY --- */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- FLOATING CONTROLS --- */
+        .sim-controls {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 200;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .sim-controls button {
+            background: rgba(8, 8, 10, 0.85);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            height: 2.25rem;
+            padding: 0 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            outline: none;
+            backdrop-filter: blur(4px);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .sim-controls button:hover {
+            border-color: var(--swiss-red);
+            color: var(--swiss-red);
+        }
+
+        /* --- EDITORIAL SWISS LAYOUT --- */
+        .wrapper {
+            position: relative;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(8, 8, 10, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            pointer-events: none; /* Lets clicks pass through to the canvas */
+        }
+
+        /* Make links and buttons inside wrapper clickable */
+        .wrapper a, .wrapper button {
+            pointer-events: auto; 
+        }
+
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-title-box {
+            flex: 2;
+            min-width: 300px;
+            padding: 3rem 2rem;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .header-meta-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            font-weight: 800;
+            line-height: 1.0;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            color: var(--text-primary);
+        }
+
+        .accent-bullet {
+            color: var(--swiss-red);
+            font-weight: 800;
+        }
+
+        .intro-text {
+            margin-top: 1rem;
+            color: var(--text-secondary);
+            max-width: 500px;
+            font-size: 1rem;
+        }
+
+        .section-grid {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            .section-grid { flex-direction: row; }
+            .header-title-box, .header-meta-box { padding: 3rem 2rem; }
+        }
+
+        .section-sidebar {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        @media (min-width: 768px) {
+            .section-sidebar {
+                border-right: 1px solid var(--border-color);
+                border-bottom: none;
+                max-width: 300px;
+            }
+        }
+
+        .section-num {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            color: var(--swiss-red);
+            font-weight: 700;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+
+        .section-content {
+            flex: 3;
+            padding: 1.5rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .color-box {
+            width: 10px; height: 10px;
+        }
+
+        .event-readout {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--swiss-red);
+            font-weight: 700;
+            margin-top: 1rem;
+            min-height: 1.5rem;
+        }
+
+        a {
+            color: var(--text-primary);
+            text-decoration: none;
+            border-bottom: 1px solid var(--swiss-red);
+            transition: all 0.2s;
+        }
+
+        a:hover {
+            background-color: var(--swiss-red);
+            color: #fff;
+        }
+
+        /* Instructions overlay */
+        .click-instruction {
+            position: absolute;
+            bottom: 2rem;
+            width: 100%;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            pointer-events: none;
+            z-index: 50;
+            letter-spacing: 1px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Sim Controls -->
+    <div class="sim-controls">
+        <button id="trigger-btn">[ FIRE BEAM ]</button>
+    </div>
+
+    <!-- Background Canvas Layer -->
+    <div id="canvas-container">
+        <canvas id="detector-canvas"></canvas>
+    </div>
+    
+    <div class="click-instruction">CLICK ANYWHERE TO GENERATE COLLISION</div>
+
+    <!-- UI Overlay matched to Portfolio -->
+    <div class="wrapper">
+        <header>
+            <div class="header-title-box">
+                <h1>High-Energy<br>Collision Sim<span class="accent-bullet">.</span></h1>
+                <p class="intro-text">
+                    A kinematic simulation of Standard Model particles interacting with generalized detector geometry and a 3.8T axial magnetic field.
+                </p>
+                <div id="event-display" class="event-readout">STATUS: AWAITING COLLISION...</div>
+            </div>
+            <div class="header-meta-box">
+                <div>
+                    <div style="color: var(--swiss-red); font-weight: 700; margin-bottom: 0.5rem;">[ NAVIGATION ]</div>
+                    <div><a href="index.html">← RETURN TO MAIN PORTFOLIO</a></div>
+                </div>
+                <div>
+                    <div>B_FIELD: 3.8 TESLA</div>
+                    <div>COM_ENERGY: 13 TEV</div>
+                </div>
+            </div>
+        </header>
+
+        <section class="section-grid">
+            <div class="section-sidebar">
+                <span class="section-num">01 // TRKS</span>
+                <h2 class="section-title">Detector Legend</h2>
+            </div>
+            <div class="section-content">
+                <div class="legend-item">
+                    <div class="color-box" style="background: var(--p-electron);"></div> Electron (e±)
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: var(--p-muon);"></div> Muon (μ±)
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: var(--p-photon);"></div> Photon (γ)
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: var(--p-hadron);"></div> Hadron (π, K)
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="border: 1px dashed #555; background: transparent;"></div> Neutrino (ν)
+                </div>
+            </div>
+        </section>
+    </div>
+
+<!-- Physics Engine Script -->
+<script>
+    const canvas = document.getElementById('detector-canvas');
+    const ctx = canvas.getContext('2d');
+    const eventDisplay = document.getElementById('event-display');
+    const triggerBtn = document.getElementById('trigger-btn');
+
+    let cx, cy;
+    let particles = [];
+    let explosions = [];
+    
+    // Magnetic field strength
+    const B = 0.015; 
+
+    // Detector boundaries (radii in pixels)
+    const R_TRACKER = 180;
+    const R_ECAL = 250;
+    const R_HCAL = 350;
+    const R_MUON = 550;
+
+    // Grab CSS variables for seamless color matching
+    const style = getComputedStyle(document.body);
+    const C_ELEC = style.getPropertyValue('--p-electron').trim();
+    const C_MUON = style.getPropertyValue('--p-muon').trim();
+    const C_PHOT = style.getPropertyValue('--p-photon').trim();
+    const C_HADR = style.getPropertyValue('--p-hadron').trim();
+    const C_BORDER = style.getPropertyValue('--border-color').trim();
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        cx = canvas.width / 2;
+        // Shift center slightly down to account for top UI
+        cy = (canvas.height / 2) + 80; 
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Standard Model Particle Dictionary
+    const SM_PARTICLES = {
+        ELECTRON: { mass: 0.5, charge: -1, color: C_ELEC, stopsAt: R_ECAL },
+        POSITRON: { mass: 0.5, charge: 1,  color: C_ELEC, stopsAt: R_ECAL },
+        MUON_MINUS: { mass: 10, charge: -1, color: C_MUON, stopsAt: R_MUON + 500 },
+        MUON_PLUS:  { mass: 10, charge: 1,  color: C_MUON, stopsAt: R_MUON + 500 },
+        PHOTON:   { mass: 0.01, charge: 0,  color: C_PHOT, stopsAt: R_ECAL },
+        HADRON_PLUS: { mass: 5, charge: 1, color: C_HADR, stopsAt: R_HCAL },
+        HADRON_MINUS:{ mass: 5, charge:-1, color: C_HADR, stopsAt: R_HCAL },
+        HADRON_NEUT: { mass: 5, charge: 0, color: '#00cc33', stopsAt: R_HCAL },
+        NEUTRINO:    { mass: 0.01, charge:0, color: 'rgba(255,255,255,0.2)', stopsAt: 9999, dashed: true }
+    };
+
+    class Particle {
+        constructor(x, y, px, py, type) {
+            this.x = x; this.y = y;
+            this.vx = px; this.vy = py;
+            this.type = type;
+            this.history = [{x, y}];
+            this.active = true;
+        }
+
+        update() {
+            if (!this.active) return;
+
+            // Lorentz Force
+            let ax = (this.type.charge * this.vy * B) / this.type.mass;
+            let ay = (-this.type.charge * this.vx * B) / this.type.mass;
+
+            this.vx += ax;
+            this.vy += ay;
+            this.x += this.vx;
+            this.y += this.vy;
+
+            this.history.push({x: this.x, y: this.y});
+
+            // Boundary checks
+            const distSq = (this.x - cx)**2 + (this.y - cy)**2;
+            if (distSq >= this.type.stopsAt**2) {
+                this.active = false;
+                if (this.type.stopsAt <= R_HCAL) {
+                    explosions.push({
+                        x: this.x, y: this.y, 
+                        color: this.type.color, 
+                        radius: Math.random() * 6 + 3,
+                        life: 1.0
+                    });
+                }
+            }
+            if (distSq > (canvas.width)**2 + (canvas.height)**2) this.active = false;
+        }
+
+        draw(ctx) {
+            if (this.history.length < 2) return;
+            ctx.beginPath();
+            ctx.strokeStyle = this.type.color;
+            ctx.lineWidth = 1.5;
+            if (this.type.dashed) ctx.setLineDash([4, 4]);
+            else ctx.setLineDash([]);
+
+            ctx.moveTo(this.history[0].x, this.history[0].y);
+            for (let i = 1; i < this.history.length; i++) {
+                ctx.lineTo(this.history[i].x, this.history[i].y);
+            }
+            ctx.stroke();
+
+            if (this.active && !this.type.dashed) {
+                ctx.beginPath();
+                ctx.fillStyle = '#fff';
+                ctx.arc(this.x, this.y, 1.5, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+    }
+
+    function drawDetector() {
+        ctx.setLineDash([2, 4]);
+        ctx.lineWidth = 1;
+
+        // Tracker
+        ctx.strokeStyle = C_BORDER;
+        ctx.beginPath(); ctx.arc(cx, cy, R_TRACKER, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.01)'; ctx.fill();
+
+        // ECAL
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.2)';
+        ctx.beginPath(); ctx.arc(cx, cy, R_ECAL, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.02)'; ctx.fill();
+
+        // HCAL
+        ctx.strokeStyle = 'rgba(0, 255, 68, 0.2)';
+        ctx.beginPath(); ctx.arc(cx, cy, R_HCAL, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = 'rgba(0, 255, 68, 0.01)'; ctx.fill();
+
+        // Muon Spectrometer (Octagon)
+        ctx.strokeStyle = 'rgba(255, 59, 48, 0.3)';
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        for(let i=0; i<=8; i++) {
+            let angle = i * Math.PI / 4;
+            let px = cx + R_MUON * Math.cos(angle);
+            let py = cy + R_MUON * Math.sin(angle);
+            if(i===0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+    }
+
+    function generateCollision(e) {
+        // Prevent triggering if clicking a link or a button
+        if(e && (e.target.tagName === 'A' || e.target.tagName === 'BUTTON')) return;
+
+        particles = [];
+        explosions = [];
+        explosions.push({x: cx, y: cy, color: '#ffffff', radius: 40, life: 1.0});
+
+        const r = Math.random();
+        let eventName = "QCD MULTIJET PRODUCTION";
+        let numHadrons = Math.floor(Math.random() * 25) + 15;
+        let numPhotons = Math.floor(Math.random() * 8);
+        let specialParticles = [];
+
+        if (r < 0.15) {
+            eventName = "HIGGS BOSON DECAY: H → γγ";
+            let angle = Math.random() * Math.PI * 2;
+            let p = 9; 
+            specialParticles.push(new Particle(cx, cy, Math.cos(angle)*p, Math.sin(angle)*p, SM_PARTICLES.PHOTON));
+            specialParticles.push(new Particle(cx, cy, -Math.cos(angle)*p, -Math.sin(angle)*p, SM_PARTICLES.PHOTON));
+        } else if (r < 0.35) {
+            eventName = "Z BOSON DECAY: Z → μ+ μ-";
+            let angle = Math.random() * Math.PI * 2;
+            let p = 7; 
+            specialParticles.push(new Particle(cx, cy, Math.cos(angle)*p, Math.sin(angle)*p, SM_PARTICLES.MUON_PLUS));
+            specialParticles.push(new Particle(cx, cy, -Math.cos(angle)*p, -Math.sin(angle)*p, SM_PARTICLES.MUON_MINUS));
+        } else if (r < 0.5) {
+            eventName = "W BOSON DECAY: W- → e- + ν";
+            let angle = Math.random() * Math.PI * 2;
+            let p = 6; 
+            specialParticles.push(new Particle(cx, cy, Math.cos(angle)*p, Math.sin(angle)*p, SM_PARTICLES.ELECTRON));
+            specialParticles.push(new Particle(cx, cy, -Math.cos(angle)*p, -Math.sin(angle)*p, SM_PARTICLES.NEUTRINO));
+        }
+
+        eventDisplay.innerText = "STATUS: " + eventName;
+        specialParticles.forEach(p => particles.push(p));
+
+        const jetAxes = [Math.random() * Math.PI * 2, Math.random() * Math.PI * 2];
+        
+        for (let i = 0; i < numHadrons; i++) {
+            let axis = jetAxes[Math.floor(Math.random() * jetAxes.length)];
+            let angle = axis + (Math.random() - 0.5) * 1.5; 
+            let p = Math.random() * 3.5 + 1;
+            
+            let typeProb = Math.random();
+            let type = SM_PARTICLES.HADRON_PLUS;
+            if (typeProb > 0.33) type = SM_PARTICLES.HADRON_MINUS;
+            if (typeProb > 0.66) type = SM_PARTICLES.HADRON_NEUT;
+            particles.push(new Particle(cx, cy, Math.cos(angle)*p, Math.sin(angle)*p, type));
+        }
+
+        for(let i=0; i<numPhotons; i++) {
+            let angle = Math.random() * Math.PI * 2;
+            let p = Math.random() * 4 + 1;
+            particles.push(new Particle(cx, cy, Math.cos(angle)*p, Math.sin(angle)*p, SM_PARTICLES.PHOTON));
+        }
+    }
+
+    function drawExplosions() {
+        for (let i = explosions.length - 1; i >= 0; i--) {
+            let exp = explosions[i];
+            ctx.beginPath();
+            ctx.arc(exp.x, exp.y, exp.radius * (1 - exp.life + 0.1) * 2, 0, Math.PI * 2);
+            ctx.fillStyle = exp.color;
+            ctx.globalAlpha = exp.life;
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+
+            exp.life -= 0.035;
+            if (exp.life <= 0) explosions.splice(i, 1);
+        }
+    }
+
+    function animate() {
+        // Creates the fading motion blur trail effect
+        ctx.fillStyle = 'rgba(8, 8, 10, 0.4)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        drawDetector();
+        drawExplosions();
+
+        particles.forEach(p => {
+            p.update();
+            p.draw(ctx);
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    // Input bindings
+    window.addEventListener('click', generateCollision);
+    triggerBtn.addEventListener('click', generateCollision);
+
+    // Initial Trigger
+    setTimeout(() => generateCollision(null), 800);
+    animate();
+
+</script>
+</body>
+</html>
