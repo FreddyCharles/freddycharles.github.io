@@ -33,15 +33,15 @@
             overflow-x: hidden;
         }
 
-        /* Ambient background canvas for the 3-Body Problem simulation */
+        /* Ambient background canvas for the 3-Body Problem simulation - placed on top */
         #canvas-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            z-index: -1;
-            pointer-events: none;
+            z-index: 100; /* Brought in front of the text layout */
+            pointer-events: none; /* Allows user to click/select content underneath */
         }
 
         canvas {
@@ -50,8 +50,58 @@
             height: 100%;
         }
 
+        /* Minimalist Swiss Control Panel */
+        .sim-controls {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 200; /* Elevated above canvas and standard page links */
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .sim-controls button {
+            background: rgba(8, 8, 10, 0.85);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            width: 2.25rem;
+            height: 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            outline: none;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        .sim-controls button svg {
+            width: 1rem;
+            height: 1rem;
+            fill: currentColor;
+            transition: transform 0.2s ease;
+        }
+
+        .sim-controls button:hover {
+            border-color: var(--swiss-red);
+            color: var(--swiss-red);
+        }
+
+        .sim-controls button:hover svg {
+            transform: scale(1.1);
+        }
+
+        .sim-controls button.active-state {
+            border-color: var(--swiss-red);
+            color: var(--swiss-red);
+            background: rgba(255, 59, 48, 0.05);
+        }
+
         /* Modern Swiss Grid Layout */
         .wrapper {
+            position: relative;
+            z-index: 1; /* Sits underneath the overlay physics layer */
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -265,17 +315,62 @@
             text-decoration: none;
             border-bottom: 1px solid var(--swiss-red);
             transition: all 0.2s;
+            position: relative;
+            z-index: 101; /* High enough to be clickable through the transparent pointer-events-none canvas overlay */
         }
 
         a:hover {
             background-color: var(--swiss-red);
             color: #fff;
         }
+
+        /* Responsive placement of controls on mobile screens */
+        @media (max-width: 600px) {
+            .sim-controls {
+                top: auto;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- 3-Body Problem Gravitational Canvas Background -->
+    <!-- Minimalist Sim Controls (Now utilizing compact SVG icons) -->
+    <div class="sim-controls">
+        <button id="toggle-sim-btn" class="active-state" title="Pause Simulation">
+            <!-- Pause SVG -->
+            <svg id="pause-svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+            <!-- Play SVG (Hidden by default) -->
+            <svg id="play-svg" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                <path d="M8 5v14l11-7z"/>
+            </svg>
+        </button>
+        <button id="toggle-dim-btn" title="Toggle Dim & Slow Mode">
+            <!-- Sun SVG (Standard Mode) -->
+            <svg id="sun-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <!-- Moon SVG (Dim Mode, Hidden by default) -->
+            <svg id="moon-svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- 3-Body Problem Gravitational Canvas Overlay (In Front) -->
     <div id="canvas-container">
         <canvas id="three-body-canvas"></canvas>
     </div>
@@ -291,19 +386,17 @@
             </div>
             <div class="header-meta-box">
                 <div>
-                    <div style="color: var(--swiss-red); font-weight: 700; margin-bottom: 0.5rem;">[ CONTACT MATRIX ]</div>
+                    <div style="color: var(--swiss-red); font-weight: 700; margin-bottom: 0.5rem;">[ CONTACT ]</div>
                     <div>T: +44-7462794717</div>
                     <div>E: <a href="mailto:freddycharles04@gmail.com">freddycharles04@gmail.com</a></div>
-                    <div>E: <a href="mailto:fltcharles1@sheffield.ac.uk">fltcharles1@sheffield.ac.uk</a></div>
                 </div>
                 <div>
-                    <div>REGISTRATION: 220160845</div>
                     <div>LINKEDIN: <a href="https://linkedin.com/in/Freddy-Charles" target="_blank">FREDDY CHARLES</a></div>
                 </div>
             </div>
         </header>
 
-        <!-- SECTION 01: QUALIFICATIONS (First Focus) -->
+        <!-- SECTION 01: QUALIFICATIONS -->
         <section class="section-grid">
             <div class="section-sidebar">
                 <span class="section-num">01 // EDU</span>
@@ -317,9 +410,7 @@
                         <h3 class="item-heading">Mechanical Engineering MEng</h3>
                         <p class="item-subheading">University of Sheffield</p>
                         <ul class="details-list">
-                            <li>First Year Performance: 1st Class Honours equivalent</li>
-                            <li>Second Year Performance: 2:1 Class Honours equivalent</li>
-                            <li>Third Year Performance: 1st Class Honours equivalent</li>
+                            <li>Focus on multiphysics simulations, finite element analysis, and mechanical design.</li>
                         </ul>
                     </div>
                 </div>
@@ -328,23 +419,9 @@
                     <div class="item-meta">2020 — 2022</div>
                     <div class="item-details">
                         <h3 class="item-heading">A-Levels & AS-Levels</h3>
-                        <p class="item-subheading">BHASVIC (Brighton Hove and Sussex Sixth Form College)</p>
+                        <p class="item-subheading">BHASVIC Brighton</p>
                         <ul class="details-list">
-                            <li>Mathematics, Physics, Chemistry (A-Level Core)</li>
-                            <li>Further Mathematics (AS-Level)</li>
-                            <li>Results Profile: A* A* A* B</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="item-row">
-                    <div class="item-meta">2015 — 2020</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">GCSE Secondary Education</h3>
-                        <p class="item-subheading">Cardinal Newman Catholic School</p>
-                        <ul class="details-list">
-                            <li>11 GCSE Qualifications including Design & Technology, Geography, French, and Music</li>
-                            <li>Results Profile (Grades 9-5): 9, 9, 8, 8, 8, 8, 7, 7, 7, 6, 5, 5</li>
+                            <li>Mathematics, Physics, Chemistry (A-Levels) // Further Mathematics (AS-Level)</li>
                         </ul>
                     </div>
                 </div>
@@ -352,7 +429,7 @@
             </div>
         </section>
 
-        <!-- SECTION 02: EXPERIENCE (Second Focus) -->
+        <!-- SECTION 02: EXPERIENCE -->
         <section class="section-grid">
             <div class="section-sidebar">
                 <span class="section-num">02 // EXP</span>
@@ -362,95 +439,49 @@
 
                 <!-- Professional Experience 1 -->
                 <div class="item-row">
-                    <div class="item-meta">SUMMER 2025<br>BRIGHTON & HOVE</div>
+                    <div class="item-meta">SUMMER 2025</div>
                     <div class="item-details">
                         <h3 class="item-heading">Multiphysics Simulations Engineer</h3>
                         <p class="item-subheading">Trivista Engineering Ltd.</p>
                         <ul class="details-list">
-                            <li>Executed structural analysis simulations on mechanical macerator turbine assemblies.</li>
-                            <li>Conducted seismic load calculations and modeling for heavy-duty bitumen tanks.</li>
-                            <li>Completed a thermal parametric design study for an automotive AC heat-exchange system.</li>
-                            <li>Developed a complex porous media fluid flow simulation for a catalytic converter assembly.</li>
-                            <li>Simulated fluid dynamics and exhaust flow velocity distribution across manifold headers.</li>
+                            <li>Executed structural analysis and fluid dynamics simulations on turbine assemblies.</li>
+                            <li>Conducted seismic calculations and thermal parametric design studies.</li>
                         </ul>
                     </div>
                 </div>
 
                 <!-- Academic Experience 1 -->
                 <div class="item-row">
-                    <div class="item-meta">2025 — 2026<br>SHEFFIELD</div>
+                    <div class="item-meta">2025 — 2026</div>
                     <div class="item-details">
                         <h3 class="item-heading">Final Year Research Project</h3>
-                        <p class="item-subheading">Investigation of Deformation History, Microstructure, and Chip Formation in Hot-Forged Ti-6Al-4V</p>
+                        <p class="item-subheading">Deformation and Chip Formation in Hot-Forged Ti-6Al-4V</p>
                         <ul class="details-list">
-                            <li>Developed a detailed experimental plan and methodology to investigate material relationships during orthogonal cutting.</li>
-                            <li>Designed high-fidelity testing procedures utilizing a customized cutting rig with high-speed imaging arrays and structural force sensors.</li>
-                            <li>Captured and analyzed chip morphology and deformation zone evolution to construct highly predictive machining models for titanium alloys.</li>
+                            <li>Designed high-fidelity testing procedures utilizing custom force sensors and high-speed imaging arrays.</li>
                         </ul>
                     </div>
                 </div>
 
                 <!-- Academic Experience 2 -->
                 <div class="item-row">
-                    <div class="item-meta">SUMMER 2024<br>SOFTWARE ENGINE</div>
+                    <div class="item-meta">SUMMER 2024</div>
                     <div class="item-details">
-                        <h3 class="item-heading">SLEDS (Logistics Equipment Distribution System)</h3>
+                        <h3 class="item-heading">SLEDS (Equipment Distribution System)</h3>
                         <p class="item-subheading">Software Project // UoS Snowsports Club</p>
                         <ul class="details-list">
-                            <li>Designed and developed a complete equipment distribution web engine to manage club rentals.</li>
-                            <li>Engineered a custom SQL backend linked with a Python Flask service architecture.</li>
-                            <li>Created the dynamic frontend web UI using structured HTML/CSS to coordinate real-time equipment booking workflows.</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Professional Experience 2 -->
-                <div class="item-row">
-                    <div class="item-meta">2024 — 2025<br>BRIGHTON & HOVE</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Workshop & Operations Technician</h3>
-                        <p class="item-subheading">Beryl Bikes</p>
-                        <ul class="details-list">
-                            <li>Worked as a mobile bicycle mechanic, replacing batteries and conducting safety checks in the field.</li>
-                            <li>Performed full mechanical overhauls, wheel-truing, and transmission services on retrieved units in the central workshop.</li>
+                            <li>Engineered custom SQL database backend integrated with a Python Flask service architecture.</li>
                         </ul>
                     </div>
                 </div>
 
                 <!-- Academic Experience 3 -->
                 <div class="item-row">
-                    <div class="item-meta">2023 — PRESENT<br>SHEFFIELD</div>
+                    <div class="item-meta">2023 — PRESENT</div>
                     <div class="item-details">
                         <h3 class="item-heading">Frame Design Engineer</h3>
                         <p class="item-subheading">Sheffield Student Downhill Bike Project</p>
                         <ul class="details-list">
-                            <li>Collaborated inside the Frame Team on structural link mechanisms and main frame layouts.</li>
-                            <li>Leveraged advanced geometric parametric solid modeling techniques inside Autodesk Fusion 360.</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Academic Experience 4 -->
-                <div class="item-row">
-                    <div class="item-meta">2021 — 2022<br>SUSSEX</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Particle Physics & Data Analyst</h3>
-                        <p class="item-subheading">BHASVIC & University of Sussex Collaboration</p>
-                        <ul class="details-list">
-                            <li>Collaborated with CERN ATLAS researchers on educational and data outreach structures.</li>
-                            <li>Utilized Python and Pandas library frameworks to filter raw event files, replicating core histogram structures from Higgs Boson discoveries.</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Professional Experience 3 -->
-                <div class="item-row">
-                    <div class="item-meta">2020 — 2022<br>BRIGHTON & HOVE</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Bicycle Mechanic</h3>
-                        <p class="item-subheading">South Coast Bikes</p>
-                        <ul class="details-list">
-                            <li>Performed comprehensive 33-step overhaul services, diagnostics, and customized tuning builds.</li>
+                            <li>Modelled link mechanisms and structural frames inside Autodesk Fusion 360.</li>
                         </ul>
                     </div>
                 </div>
@@ -458,11 +489,11 @@
             </div>
         </section>
 
-        <!-- SECTION 03: EXTRA QUALIFICATIONS (Third Focus) -->
+        <!-- SECTION 03: SKILLS & LEADERSHIP -->
         <section class="section-grid">
             <div class="section-sidebar">
-                <span class="section-num">03 // EXTRA</span>
-                <h2 class="section-title">Extra Qualifications</h2>
+                <span class="section-num">03 // SKILLS</span>
+                <h2 class="section-title">Skills & Stack</h2>
             </div>
             <div class="section-content">
 
@@ -471,19 +502,16 @@
                     <div class="item-meta">COMPUTING & CAD</div>
                     <div class="item-details">
                         <h3 class="item-heading">Software Stack</h3>
-                        <p class="item-subheading">Technical simulation, modeling, design, and audio production frameworks</p>
+                        <p class="item-subheading">Simulation, engineering design, and programming languages</p>
                         <div class="skills-flex">
                             <span class="skill-tag">MATLAB</span>
-                            <span class="skill-badge skill-tag">Python (Pandas)</span>
+                            <span class="skill-tag">Python (Pandas)</span>
                             <span class="skill-tag">Ansys</span>
                             <span class="skill-tag">Autodesk Fusion 360</span>
                             <span class="skill-tag">AutoCAD</span>
                             <span class="skill-tag">LaTeX</span>
                             <span class="skill-tag">HTML5 / CSS3</span>
                             <span class="skill-tag">JavaScript (ES6)</span>
-                            <span class="skill-tag">Adobe Illustrator</span>
-                            <span class="skill-tag">Photoshop</span>
-                            <span class="skill-tag">Ableton Live 11</span>
                         </div>
                     </div>
                 </div>
@@ -492,37 +520,10 @@
                 <div class="item-row">
                     <div class="item-meta">LEADERSHIP</div>
                     <div class="item-details">
-                        <h3 class="item-heading">Design, Media & Kit Secretary</h3>
-                        <p class="item-subheading">University of Sheffield Snowsports Club (2023 — Present)</p>
+                        <h3 class="item-heading">Design & Kit Secretary</h3>
+                        <p class="item-subheading">University of Sheffield Snowsports Club</p>
                         <ul class="details-list">
-                            <li>Nominated three consecutive times by the club body to manage executive graphics, merchandise, and general logistics.</li>
-                            <li>Designed, sourced, and coordinated full production pipelines for custom technical ski jackets, hoodies, and club apparel.</li>
-                            <li>Engineered and maintained commercial relationships with key brand sponsors.</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Athletics -->
-                <div class="item-row">
-                    <div class="item-meta">ATHLETICS</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Competitive Sports & Merits</h3>
-                        <p class="item-subheading">Ski Racing, Downhill Mountain Biking, and Handball</p>
-                        <ul class="details-list">
-                            <li>Represented the University of Sheffield in competitive structural ski race classes.</li>
-                            <li>Received the prestigious **Black and Gold** athletic merit award for significant contributions to university sports performance.</li>
-                            <li>Helped Brighton U16's Handball Team secure 2nd place overall in the UK national league (2019).</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Certifications -->
-                <div class="item-row">
-                    <div class="item-meta">MISC</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">General Licensure</h3>
-                        <ul class="details-list">
-                            <li>Full UK Clean Driving License Holder</li>
+                            <li>Coordinated product engineering pipelines for custom technical apparel and managed logistics.</li>
                         </ul>
                     </div>
                 </div>
@@ -532,9 +533,8 @@
 
         <!-- Swiss Technical Footer -->
         <footer>
-            <div>SYSTEM: STABLE 3-BODY CHAOTIC ENGINE</div>
-            <div>STARCH-WHITE / SWISS-RED COLOR SCHEME</div>
-            <div>DESIGNED & CODED BY FREDDY CHARLES &copy; 2026</div>
+            <div>FREDDY CHARLES &copy; 2026</div>
+            <div>3-BODY PHYSICS SIMULATION OVERLAY</div>
         </footer>
     </div>
 
@@ -546,20 +546,124 @@
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
 
+        // Simulation run states
+        let isSimRunning = true;
+        let isDimSlowMode = false;
+
+        // UI Element Selectors
+        const toggleSimBtn = document.getElementById('toggle-sim-btn');
+        const toggleDimBtn = document.getElementById('toggle-dim-btn');
+        const pauseSvg = document.getElementById('pause-svg');
+        const playSvg = document.getElementById('play-svg');
+        const sunSvg = document.getElementById('sun-svg');
+        const moonSvg = document.getElementById('moon-svg');
+
+        // Toggle Simulation Play/Pause
+        toggleSimBtn.addEventListener('click', () => {
+            isSimRunning = !isSimRunning;
+            if (isSimRunning) {
+                toggleSimBtn.setAttribute('title', 'Pause Simulation');
+                toggleSimBtn.classList.add('active-state');
+                pauseSvg.style.display = 'block';
+                playSvg.style.display = 'none';
+            } else {
+                toggleSimBtn.setAttribute('title', 'Resume Simulation');
+                toggleSimBtn.classList.remove('active-state');
+                pauseSvg.style.display = 'none';
+                playSvg.style.display = 'block';
+            }
+        });
+
+        // Toggle Standard / Dim Slow-mo modes
+        toggleDimBtn.addEventListener('click', () => {
+            isDimSlowMode = !isDimSlowMode;
+            if (isDimSlowMode) {
+                toggleDimBtn.setAttribute('title', 'Toggle Standard Mode');
+                toggleDimBtn.classList.add('active-state');
+                sunSvg.style.display = 'none';
+                moonSvg.style.display = 'block';
+            } else {
+                toggleDimBtn.setAttribute('title', 'Toggle Dim & Slow Mode');
+                toggleDimBtn.classList.remove('active-state');
+                sunSvg.style.display = 'block';
+                moonSvg.style.display = 'none';
+            }
+        });
+
+        // Interaction state track
+        const mouse = {
+            x: -1000,
+            y: -1000,
+            active: false
+        };
+
+        // Track scrolling state
+        let lastScrollY = window.scrollY;
+
         window.addEventListener('resize', () => {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
             initPhysics();
         });
 
-        // 3-Body parameters
-        const G = 1500; // Gravitational constant (scaled for visual speed)
-        const springK = 0.00008; // Spring force pulling back to center to bound the chaos
-        const softening = 350; // Prevents division by zero/extreme slingshots
+        // Mouse coordinates mapping
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+        });
+
+        window.addEventListener('mouseleave', () => {
+            mouse.active = false;
+        });
+
+        // Mobile touch mapping
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                mouse.x = e.touches[0].clientX;
+                mouse.y = e.touches[0].clientY;
+                mouse.active = true;
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', () => {
+            mouse.active = false;
+        });
+
+        // Listen for scroll interaction
+        window.addEventListener('scroll', () => {
+            if (!isSimRunning) return; // Ignore scrolling impact when paused
+
+            const currentScrollY = window.scrollY;
+            const deltaY = currentScrollY - lastScrollY;
+            lastScrollY = currentScrollY;
+
+            // Apply dampening on the scroll delta if we are in slow mode
+            const scrollDampen = isDimSlowMode ? 0.25 : 1.0;
+
+            // Scroll forces applied to bodies and dust (pushing them in the opposite direction of scroll movement)
+            bodies.forEach(b => {
+                b.vy -= deltaY * 0.03 * scrollDampen;
+                b.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.015 * scrollDampen;
+            });
+
+            particles.forEach(p => {
+                p.vy -= deltaY * 0.02 * scrollDampen;
+                p.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.01 * scrollDampen;
+            });
+        });
+
+        // 3-Body parameters (all physics constants halved for 50% speed reduction)
+        const G = 375; // Gravitational constant (halved from 750)
+        const springK = 0.00002; // Gentle spring pull (halved from 0.00004)
+        const softening = 450; 
+        const repulseRadius = 140; 
+        const repulseStrength = 0.1; // Mouse repulsion strength (halved from 0.2)
+        const bounceElasticity = 0.85; 
 
         let bodies = [];
         let particles = [];
-        const numParticles = 40; // Small cosmic dust particles orbiting chaotic gravity fields
+        const numParticles = 30; 
 
         class Body {
             constructor(x, y, vx, vy, mass, color) {
@@ -569,19 +673,61 @@
                 this.vy = vy;
                 this.mass = mass;
                 this.color = color;
+                this.radius = 4.5; 
                 this.trail = [];
                 this.maxTrail = 180;
             }
 
             update() {
-                // Apply subtle central spring force to preserve frame alignment over long duration
+                if (!isSimRunning) return;
+
+                // Scale speed dynamically if Slow-Mo Mode is active
+                const dt = isDimSlowMode ? 0.25 : 1.0;
+
+                // Gentle pull back to center
                 let dx = (width / 2) - this.x;
                 let dy = (height / 2) - this.y;
-                this.vx += dx * springK;
-                this.vy += dy * springK;
+                this.vx += dx * springK * dt;
+                this.vy += dy * springK * dt;
 
-                this.x += this.vx;
-                this.y += this.vy;
+                // Push away from active mouse pointer (dampened interaction)
+                if (mouse.active) {
+                    let mdx = this.x - mouse.x;
+                    let mdy = this.y - mouse.y;
+                    let mDistSq = mdx * mdx + mdy * mdy;
+                    let mDist = Math.sqrt(mDistSq);
+                    
+                    if (mDist < repulseRadius && mDist > 0) {
+                        let force = (repulseRadius - mDist) / repulseRadius;
+                        this.vx += (mdx / mDist) * force * repulseStrength * dt;
+                        this.vy += (mdy / mDist) * force * repulseStrength * dt;
+                    }
+                }
+
+                // Smooth dampening drag
+                this.vx *= 0.993;
+                this.vy *= 0.993;
+
+                // Integrate acceleration vectors into positions scaled by delta time
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+
+                // Boundary Collisions (Screen Edges)
+                if (this.x - this.radius < 0) {
+                    this.x = this.radius;
+                    this.vx = Math.abs(this.vx) * bounceElasticity;
+                } else if (this.x + this.radius > width) {
+                    this.x = width - this.radius;
+                    this.vx = -Math.abs(this.vx) * bounceElasticity;
+                }
+
+                if (this.y - this.radius < 0) {
+                    this.y = this.radius;
+                    this.vy = Math.abs(this.vy) * bounceElasticity;
+                } else if (this.y + this.radius > height) {
+                    this.y = height - this.radius;
+                    this.vy = -Math.abs(this.vy) * bounceElasticity;
+                }
 
                 this.trail.push({ x: this.x, y: this.y });
                 if (this.trail.length > this.maxTrail) {
@@ -590,29 +736,32 @@
             }
 
             draw() {
-                // Render trailing coordinates
+                const opacityMultiplier = isDimSlowMode ? 0.2 : 1.0;
+
+                // Beautiful faded line segments
                 if (this.trail.length > 1) {
-                    ctx.beginPath();
-                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
                     for (let i = 1; i < this.trail.length; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(this.trail[i - 1].x, this.trail[i - 1].y);
                         ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                        ctx.strokeStyle = this.color;
+                        ctx.globalAlpha = (i / this.trail.length) * 0.35 * opacityMultiplier;
+                        ctx.lineWidth = 1.2;
+                        ctx.stroke();
                     }
-                    ctx.strokeStyle = this.color;
-                    ctx.globalAlpha = 0.35;
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
                 }
 
                 // Render current node core
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
-                ctx.globalAlpha = 1.0;
+                ctx.globalAlpha = 1.0 * opacityMultiplier;
                 ctx.fill();
+                ctx.globalAlpha = 1.0; // Reset global alpha
             }
         }
 
-        // Low mass cosmic dust particles orbiting the massive 3-body system
+        // Low mass cosmic dust particles
         class DustParticle {
             constructor() {
                 this.reset();
@@ -621,38 +770,58 @@
             reset() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 1.5;
-                this.vy = (Math.random() - 0.5) * 1.5;
-                this.alpha = Math.random() * 0.3 + 0.1;
+                // Initial velocities halved (scaled down from 0.8 to 0.4)
+                this.vx = (Math.random() - 0.5) * 0.4;
+                this.vy = (Math.random() - 0.5) * 0.4;
+                this.alpha = Math.random() * 0.25 + 0.05;
                 this.color = Math.random() > 0.5 ? '#8e8e93' : '#ffffff';
                 this.trail = [];
-                this.maxTrail = 20;
+                this.maxTrail = 15;
             }
 
             update() {
-                // Gravity acceleration vectors calculated from all three massive bodies
+                if (!isSimRunning) return;
+
+                const dt = isDimSlowMode ? 0.25 : 1.0;
+
+                // Gravity calculations from all three massive bodies
                 bodies.forEach(b => {
                     let dx = b.x - this.x;
                     let dy = b.y - this.y;
                     let distSq = dx*dx + dy*dy;
                     let dist = Math.sqrt(distSq);
                     
-                    if (dist < 10) {
+                    if (dist < 12) {
                         this.reset();
                         return;
                     }
 
+                    // Gravity pull halved (scaled down from 0.006 to 0.003)
                     let force = (G * b.mass) / (distSq + softening);
-                    this.vx += (dx / dist) * force * 0.01;
-                    this.vy += (dy / dist) * force * 0.01;
+                    this.vx += (dx / dist) * force * 0.003 * dt;
+                    this.vy += (dy / dist) * force * 0.003 * dt;
                 });
 
-                // Apply velocity constraints to avoid escaping outer system
-                this.vx *= 0.995;
-                this.vy *= 0.995;
+                // Subtle particle mouse repulsion halved
+                if (mouse.active) {
+                    let mdx = this.x - mouse.x;
+                    let mdy = this.y - mouse.y;
+                    let mDistSq = mdx * mdx + mdy * mdy;
+                    let mDist = Math.sqrt(mDistSq);
+                    let particleRepulseRadius = 90;
 
-                this.x += this.vx;
-                this.y += this.vy;
+                    if (mDist < particleRepulseRadius && mDist > 0) {
+                        let force = (particleRepulseRadius - mDist) / particleRepulseRadius;
+                        this.vx += (mdx / mDist) * force * 0.15 * dt;
+                        this.vy += (mdy / mDist) * force * 0.15 * dt;
+                    }
+                }
+
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
 
                 this.trail.push({ x: this.x, y: this.y });
                 if (this.trail.length > this.maxTrail) {
@@ -665,17 +834,19 @@
             }
 
             draw() {
+                const opacityMultiplier = isDimSlowMode ? 0.2 : 1.0;
+
                 if (this.trail.length < 2) return;
-                ctx.beginPath();
-                ctx.moveTo(this.trail[0].x, this.trail[0].y);
                 for (let i = 1; i < this.trail.length; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.trail[i - 1].x, this.trail[i - 1].y);
                     ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                    ctx.strokeStyle = this.color;
+                    ctx.globalAlpha = (i / this.trail.length) * this.alpha * 0.6 * opacityMultiplier;
+                    ctx.lineWidth = 0.6;
+                    ctx.stroke();
                 }
-                ctx.strokeStyle = this.color;
-                ctx.globalAlpha = this.alpha;
-                ctx.lineWidth = 0.8;
-                ctx.stroke();
-                ctx.globalAlpha = 1.0;
+                ctx.globalAlpha = 1.0; // Reset global alpha
             }
         }
 
@@ -683,14 +854,14 @@
             const cx = width / 2;
             const cy = height / 2;
 
-            // Stable chaotic initial offsets and velocities for the 3 bodies
+            // Initial velocities halved to begin orbits gently
             bodies = [
                 // Body 1 (Swiss Red)
-                new Body(cx - 160, cy - 80, -0.6, 2.2, 2.5, '#ff3b30'),
+                new Body(cx - 160, cy - 80, -0.15, 0.55, 2.5, '#ff3b30'),
                 // Body 2 (Pure White)
-                new Body(cx + 160, cy - 80, 0.6, -2.2, 2.5, '#ffffff'),
+                new Body(cx + 160, cy - 80, 0.15, -0.55, 2.5, '#ffffff'),
                 // Body 3 (Slate Gray)
-                new Body(cx, cy + 140, 1.2, 0.2, 2.5, '#48484a')
+                new Body(cx, cy + 140, 0.3, 0.05, 2.5, '#48484a')
             ];
 
             particles = [];
@@ -700,12 +871,17 @@
         }
 
         function calculateForces() {
+            if (!isSimRunning) return;
+
+            const dt = isDimSlowMode ? 0.25 : 1.0;
+
             // Pairwise Mutual Gravitational Calculation
             // Force 1-2
             let dx12 = bodies[1].x - bodies[0].x;
             let dy12 = bodies[1].y - bodies[0].y;
             let dSq12 = dx12*dx12 + dy12*dy12;
             let dist12 = Math.sqrt(dSq12);
+            if (dist12 < 0.1) dist12 = 0.1; // Safeguard against division by zero (NaN lock up)
             let f12 = (G * bodies[0].mass * bodies[1].mass) / (dSq12 + softening);
 
             // Force 1-3
@@ -713,6 +889,7 @@
             let dy13 = bodies[2].y - bodies[0].y;
             let dSq13 = dx13*dx13 + dy13*dy13;
             let dist13 = Math.sqrt(dSq13);
+            if (dist13 < 0.1) dist13 = 0.1; // Safeguard against division by zero (NaN lock up)
             let f13 = (G * bodies[0].mass * bodies[2].mass) / (dSq13 + softening);
 
             // Force 2-3
@@ -720,23 +897,22 @@
             let dy23 = bodies[2].y - bodies[1].y;
             let dSq23 = dx23*dx23 + dy23*dy23;
             let dist23 = Math.sqrt(dSq23);
+            if (dist23 < 0.1) dist23 = 0.1; // Safeguard against division by zero (NaN lock up)
             let f23 = (G * bodies[1].mass * bodies[2].mass) / (dSq23 + softening);
 
-            // Resolve vectors and apply to trajectories
-            bodies[0].vx += ((dx12 / dist12) * f12 + (dx13 / dist13) * f13) / bodies[0].mass;
-            bodies[0].vy += ((dy12 / dist12) * f12 + (dy13 / dist13) * f13) / bodies[0].mass;
+            // Resolve vectors and apply to trajectories scaled by delta time
+            bodies[0].vx += (((dx12 / dist12) * f12 + (dx13 / dist13) * f13) / bodies[0].mass) * dt;
+            bodies[0].vy += (((dy12 / dist12) * f12 + (dy13 / dist13) * f13) / bodies[0].mass) * dt;
 
-            bodies[1].vx += ((-dx12 / dist12) * f12 + (dx23 / dist23) * f23) / bodies[1].mass;
-            bodies[1].vy += ((-dy12 / dist12) * f12 + (dy23 / dist23) * f23) / bodies[1].mass;
+            bodies[1].vx += (((-dx12 / dist12) * f12 + (dx23 / dist23) * f23) / bodies[1].mass) * dt;
+            bodies[1].vy += (((-dy12 / dist12) * f12 + (dy23 / dist23) * f23) / bodies[1].mass) * dt;
 
-            bodies[2].vx += ((-dx13 / dist13) * f13 + (-dx23 / dist23) * f23) / bodies[2].mass;
-            bodies[2].vy += ((-dy13 / dist13) * f13 + (-dy23 / dist23) * f23) / bodies[2].mass;
+            bodies[2].vx += (((-dx13 / dist13) * f13 + (-dx23 / dist23) * f23) / bodies[2].mass) * dt;
+            bodies[2].vy += (((-dy13 / dist13) * f13 + (-dy23 / dist23) * f23) / bodies[2].mass) * dt;
         }
 
         function animate() {
-            // Semi-transparent redraw to enable soft kinetic trails
-            ctx.fillStyle = 'rgba(8, 8, 10, 0.1)';
-            ctx.fillRect(0, 0, width, height);
+            ctx.clearRect(0, 0, width, height);
 
             calculateForces();
 
