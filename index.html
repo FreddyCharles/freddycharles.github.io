@@ -4,18 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Freddy Charles | Mechanical Engineering & Simulation</title>
-    <!-- Importing a clean, technical monospace font for an engineering/data feel -->
+    <!-- Importing clean monospace and sans-serif fonts for an engineering design feel -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-dark: #07090e;
-            --panel-bg: rgba(13, 18, 30, 0.7);
+            --bg-dark: #06080c;
+            --panel-bg: rgba(10, 15, 26, 0.75);
             --panel-border: rgba(56, 189, 248, 0.15);
             --text-primary: #f1f5f9;
             --text-secondary: #94a3b8;
             --accent-cyan: #38bdf8;
-            --accent-glow: rgba(56, 189, 248, 0.3);
             --font-sans: 'Plus Jakarta Sans', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
         }
@@ -34,7 +33,7 @@
             overflow-x: hidden;
         }
 
-        /* Ambient background canvas for the Max Cooper-style fluid simulation */
+        /* Ambient background canvas for the Boids flocking simulation */
         #canvas-container {
             position: fixed;
             top: 0;
@@ -63,16 +62,16 @@
         /* Glassmorphism panel styling */
         .glass-panel {
             background: var(--panel-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             border: 1px solid var(--panel-border);
             border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
         }
 
-        /* Simulation Controller UI */
+        /* Interactive Simulation Controller */
         .sim-controller {
             position: sticky;
             top: 1rem;
@@ -82,13 +81,15 @@
             gap: 1.5rem;
             align-items: center;
             justify-content: space-between;
-            background: rgba(7, 9, 14, 0.85);
+            background: rgba(6, 8, 12, 0.9);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--panel-border);
+            border: 1px solid var(--panel-border);
             border-radius: 8px;
             margin-bottom: 3rem;
             font-family: var(--font-mono);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
         .sim-title {
@@ -121,14 +122,7 @@
             height: 4px;
             border-radius: 2px;
             outline: none;
-            width: 80px;
-        }
-
-        .checkbox-container {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            cursor: pointer;
+            width: 70px;
         }
 
         /* Header / Hero */
@@ -180,7 +174,7 @@
         /* Section Typography */
         h2 {
             font-family: var(--font-mono);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: var(--accent-cyan);
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -286,26 +280,30 @@
 </head>
 <body>
 
-    <!-- Generative Art Background -->
+    <!-- Generative Boids Background -->
     <div id="canvas-container">
         <canvas id="generative-canvas"></canvas>
     </div>
 
-    <!-- Active Vector Field Simulator Control Panel -->
+    <!-- Active Boids Simulation Control Panel -->
     <div class="sim-controller">
-        <div class="sim-title">Field Sim v1.0.4</div>
+        <div class="sim-title">Boids Kinematics</div>
         <div class="sim-controls">
             <div class="control-group">
-                <label for="flow-speed">Velocity</label>
-                <input type="range" id="flow-speed" min="0.1" max="2" step="0.1" value="0.7">
+                <label for="cohesion-weight">Cohesion</label>
+                <input type="range" id="cohesion-weight" min="0.1" max="3" step="0.1" value="1.0">
             </div>
             <div class="control-group">
-                <label for="particle-count">Density</label>
-                <input type="range" id="particle-count" min="50" max="400" step="10" value="200">
+                <label for="alignment-weight">Alignment</label>
+                <input type="range" id="alignment-weight" min="0.1" max="3" step="0.1" value="1.0">
             </div>
-            <div class="control-group checkbox-container">
-                <input type="checkbox" id="show-vectors" checked>
-                <label for="show-vectors">Vector Grid</label>
+            <div class="control-group">
+                <label for="separation-weight">Separation</label>
+                <input type="range" id="separation-weight" min="0.1" max="3" step="0.1" value="1.5">
+            </div>
+            <div class="control-group">
+                <label for="boid-count">Agents</label>
+                <input type="range" id="boid-count" min="40" max="250" step="10" value="130">
             </div>
         </div>
     </div>
@@ -538,10 +536,10 @@
     </div>
 
     <footer>
-        <p>Generative visual algorithms &copy; 2026 Freddy Charles. Designed using mathematics & canvas mechanics.</p>
+        <p>Boids artificial life simulation &copy; 2026 Freddy Charles. Powered by HTML5 Canvas vector logic.</p>
     </footer>
 
-    <!-- Generative Script Modeling (Max Cooper style flow field simulation) -->
+    <!-- Interactive Boids Logic -->
     <script>
         const canvas = document.getElementById('generative-canvas');
         const ctx = canvas.getContext('2d');
@@ -549,19 +547,28 @@
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
 
-        // Interactive simulation parameters mapped to slider elements
-        const speedSlider = document.getElementById('flow-speed');
-        const densitySlider = document.getElementById('particle-count');
-        const vectorCheckbox = document.getElementById('show-vectors');
+        // UI Slider elements
+        const cohesionSlider = document.getElementById('cohesion-weight');
+        const alignmentSlider = document.getElementById('alignment-weight');
+        const separationSlider = document.getElementById('separation-weight');
+        const countSlider = document.getElementById('boid-count');
 
-        let particles = [];
-        let numParticles = parseInt(densitySlider.value);
-        let flowSpeed = parseFloat(speedSlider.value);
-        let showVectors = vectorCheckbox.checked;
+        // Boid parameters
+        let cohesionWeight = parseFloat(cohesionSlider.value);
+        let alignmentWeight = parseFloat(alignmentSlider.value);
+        let separationWeight = parseFloat(separationSlider.value);
+        let numBoids = parseInt(countSlider.value);
 
-        // Track cursor coordinates
-        let mouse = { x: -1000, y: -1000, radius: 180 };
+        const maxSpeed = 3.2;
+        const maxForce = 0.04;
+        const neighborRadius = 55;
+        const separationRadius = 24;
+        const cursorAvoidRadius = 140;
 
+        let boids = [];
+        let mouse = { x: -1000, y: -1000 };
+
+        // Mouse boundaries
         window.addEventListener('mousemove', (e) => {
             mouse.x = e.clientX;
             mouse.y = e.clientY;
@@ -575,75 +582,182 @@
         window.addEventListener('resize', () => {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            initParticles();
+            initBoids();
         });
 
-        // Generative Flow field formula (sine/cosine vector fields)
-        function getForceField(x, y, time) {
-            // Complex superposition of trigonometric waves to generate organic fluid curves
-            let angle1 = Math.sin(x * 0.003 + time * 0.2) * Math.cos(y * 0.002 - time * 0.1) * Math.PI * 2;
-            let angle2 = Math.cos(x * 0.001 - time * 0.15) * Math.sin(y * 0.004 + time * 0.1) * Math.PI;
-            return (angle1 + angle2) * 0.5;
-        }
-
-        // Particle particle simulation class
-        class Particle {
+        class Boid {
             constructor() {
-                this.reset();
-            }
-
-            reset() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                this.vx = 0;
-                this.vy = 0;
-                this.speedMultiplier = Math.random() * 0.5 + 0.5;
-                this.alpha = Math.random() * 0.4 + 0.15;
-                this.color = Math.random() > 0.3 ? '#38bdf8' : '#1e3a8a'; // Blue/Cyan theme
-                this.history = []; // Trails
-                this.historyLength = Math.floor(Math.random() * 8) + 3;
+                
+                // Initialize velocity
+                const angle = Math.random() * Math.PI * 2;
+                this.vx = Math.cos(angle) * maxSpeed;
+                this.vy = Math.sin(angle) * maxSpeed;
+                
+                this.ax = 0;
+                this.ay = 0;
+                
+                this.color = Math.random() > 0.4 ? '#38bdf8' : '#1e3a8a';
+                this.alpha = Math.random() * 0.35 + 0.2;
+                
+                // Keep brief history coordinates for rendering sleek Max Cooper line trails
+                this.history = [];
+                this.historyLength = 7;
             }
 
-            update(time) {
-                // Get vector coordinate force
-                let angle = getForceField(this.x, this.y, time);
-                
-                let targetVx = Math.cos(angle) * this.speedMultiplier * flowSpeed * 3;
-                let targetVy = Math.sin(angle) * this.speedMultiplier * flowSpeed * 3;
+            applyForce(fx, fy) {
+                this.ax += fx;
+                this.ay += fy;
+            }
 
-                // Smooth transitions (representing fluid inertia)
-                this.vx += (targetVx - this.vx) * 0.08;
-                this.vy += (targetVy - this.vy) * 0.08;
+            flock() {
+                let sepX = 0, sepY = 0;
+                let aliX = 0, aliY = 0;
+                let cohX = 0, cohY = 0;
 
-                // Interact with cursor vector field (repulsion/vortex)
-                let dx = mouse.x - this.x;
-                let dy = mouse.y - this.y;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < mouse.radius) {
-                    let force = (mouse.radius - dist) / mouse.radius;
-                    // Orbiting force vectors mimicking fluid turbulence around a boundary
-                    let angleToMouse = Math.atan2(dy, dx) + Math.PI / 2;
-                    this.vx += Math.cos(angleToMouse) * force * 2;
-                    this.vy += Math.sin(angleToMouse) * force * 2;
+                let sepCount = 0;
+                let neighborCount = 0;
+
+                for (let other of boids) {
+                    if (other === this) continue;
+
+                    const dx = other.x - this.x;
+                    const dy = other.y - this.y;
+                    const distSq = dx * dx + dy * dy;
+
+                    // Separation check
+                    if (distSq < separationRadius * separationRadius && distSq > 0) {
+                        const d = Math.sqrt(distSq);
+                        sepX -= dx / d;
+                        sepY -= dy / d;
+                        sepCount++;
+                    }
+
+                    // Alignment & Cohesion check
+                    if (distSq < neighborRadius * neighborRadius) {
+                        aliX += other.vx;
+                        aliY += other.vy;
+                        cohX += other.x;
+                        cohY += other.y;
+                        neighborCount++;
+                    }
                 }
 
-                // Append coordinates to history for fluid line rendering
-                this.history.push({x: this.x, y: this.y});
-                if (this.history.length > this.historyLength) {
-                    this.history.shift();
+                // Apply separation algorithm
+                if (sepCount > 0) {
+                    sepX /= sepCount;
+                    sepY /= sepCount;
+                    const speed = Math.sqrt(sepX * sepX + sepY * sepY);
+                    if (speed > 0) {
+                        // Steering = Desired - Velocity
+                        sepX = (sepX / speed) * maxSpeed - this.vx;
+                        sepY = (sepY / speed) * maxSpeed - this.vy;
+                        const force = Math.sqrt(sepX * sepX + sepY * sepY);
+                        if (force > maxForce) {
+                            sepX = (sepX / force) * maxForce;
+                            sepY = (sepY / force) * maxForce;
+                        }
+                    }
+                }
+
+                // Apply Alignment and Cohesion
+                if (neighborCount > 0) {
+                    // Alignment force
+                    aliX /= neighborCount;
+                    aliY /= neighborCount;
+                    const aliSpeed = Math.sqrt(aliX * aliX + aliY * aliY);
+                    if (aliSpeed > 0) {
+                        aliX = (aliX / aliSpeed) * maxSpeed - this.vx;
+                        aliY = (aliY / aliSpeed) * maxSpeed - this.vy;
+                        const force = Math.sqrt(aliX * aliX + aliY * aliY);
+                        if (force > maxForce) {
+                            aliX = (aliX / force) * maxForce;
+                            aliY = (aliY / force) * maxForce;
+                        }
+                    }
+
+                    // Cohesion force (steer to center of local mass)
+                    cohX /= neighborCount;
+                    cohY /= neighborCount;
+                    let targetX = cohX - this.x;
+                    let targetY = cohY - this.y;
+                    const targetSpeed = Math.sqrt(targetX * targetX + targetY * targetY);
+                    if (targetSpeed > 0) {
+                        targetX = (targetX / targetSpeed) * maxSpeed - this.vx;
+                        targetY = (targetY / targetSpeed) * maxSpeed - this.vy;
+                        const force = Math.sqrt(targetX * targetX + targetY * targetY);
+                        if (force > maxForce) {
+                            targetX = (targetX / force) * maxForce;
+                            targetY = (targetY / force) * maxForce;
+                        }
+                    }
+                    cohX = targetX;
+                    cohY = targetY;
+                }
+
+                this.applyForce(sepX * separationWeight, sepY * separationWeight);
+                this.applyForce(aliX * alignmentWeight, aliY * alignmentWeight);
+                this.applyForce(cohX * cohesionWeight, cohY * cohesionWeight);
+            }
+
+            avoidCursor() {
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                const distSq = dx * dx + dy * dy;
+
+                // Strong radial evasion vector when cursor enters threshold boundaries
+                if (distSq < cursorAvoidRadius * cursorAvoidRadius && distSq > 0) {
+                    const d = Math.sqrt(distSq);
+                    let targetX = (-dx / d) * maxSpeed - this.vx;
+                    let targetY = (-dy / d) * maxSpeed - this.vy;
+                    const force = Math.sqrt(targetX * targetX + targetY * targetY);
+                    
+                    // Prioritize predator evasion with a multiplier
+                    const maxPredatorForce = maxForce * 5.0; 
+                    if (force > maxPredatorForce) {
+                        targetX = (targetX / force) * maxPredatorForce;
+                        targetY = (targetY / force) * maxPredatorForce;
+                    }
+                    this.applyForce(targetX, targetY);
+                }
+            }
+
+            update() {
+                this.vx += this.ax;
+                this.vy += this.ay;
+
+                // Velocity limiting logic
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (speed > maxSpeed) {
+                    this.vx = (this.vx / speed) * maxSpeed;
+                    this.vy = (this.vy / speed) * maxSpeed;
                 }
 
                 this.x += this.vx;
                 this.y += this.vy;
 
-                // Recycle particles that move outside frame limits
-                if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
-                    this.reset();
+                // Reset acceleration vector for next kinematic frame iteration
+                this.ax = 0;
+                this.ay = 0;
+
+                // Keep trail history
+                this.history.push({ x: this.x, y: this.y });
+                if (this.history.length > this.historyLength) {
+                    this.history.shift();
                 }
+
+                // Toroidal screen boundary wraps (seamless screen transitions)
+                if (this.x < -10) this.x = width + 10;
+                if (this.x > width + 10) this.x = -10;
+                if (this.y < -10) this.y = height + 10;
+                if (this.y > height + 10) this.y = -10;
             }
 
             draw() {
                 if (this.history.length < 2) return;
+
+                // 1. Draw trail vectors
                 ctx.beginPath();
                 ctx.moveTo(this.history[0].x, this.history[0].y);
                 for (let i = 1; i < this.history.length; i++) {
@@ -653,72 +767,73 @@
                 ctx.globalAlpha = this.alpha;
                 ctx.lineWidth = 1.2;
                 ctx.stroke();
+
+                // 2. Draw boid head (sleek vector triangle pointing towards velocity angle)
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (speed > 0) {
+                    const angle = Math.atan2(this.vy, this.vx);
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(angle);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(4, 0);
+                    ctx.lineTo(-4, -2.5);
+                    ctx.lineTo(-2, 0);
+                    ctx.lineTo(-4, 2.5);
+                    ctx.closePath();
+                    
+                    ctx.fillStyle = this.color;
+                    ctx.globalAlpha = this.alpha + 0.25;
+                    ctx.fill();
+                    ctx.restore();
+                }
                 ctx.globalAlpha = 1.0;
             }
         }
 
-        function initParticles() {
-            particles = [];
-            for (let i = 0; i < numParticles; i++) {
-                particles.push(new Particle());
+        function initBoids() {
+            boids = [];
+            for (let i = 0; i < numBoids; i++) {
+                boids.push(new Boid());
             }
         }
 
-        // Draw structural background vector grid (Max Cooper schematic visual style)
-        function drawVectorGrid(time) {
-            let spacing = 50;
-            ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
-            ctx.lineWidth = 1;
-            
-            for (let x = spacing / 2; x < width; x += spacing) {
-                for (let y = spacing / 2; y < height; y += spacing) {
-                    let angle = getForceField(x, y, time);
-                    let len = 8;
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
-                    ctx.stroke();
-                }
-            }
-        }
-
-        let time = 0;
         function animate() {
-            // Draw dark backdrop with slight transparency to allow subtle frame ghost trails
-            ctx.fillStyle = 'rgba(7, 9, 14, 0.15)';
+            // Semi-transparent background draw to simulate persistent canvas ghost trails
+            ctx.fillStyle = 'rgba(6, 8, 12, 0.18)';
             ctx.fillRect(0, 0, width, height);
 
-            time += 0.005;
-
-            if (showVectors) {
-                drawVectorGrid(time);
-            }
-
-            particles.forEach(p => {
-                p.update(time);
-                p.draw();
+            boids.forEach(boid => {
+                boid.flock();
+                boid.avoidCursor();
+                boid.update();
+                boid.draw();
             });
 
             requestAnimationFrame(animate);
         }
 
-        // UI Listeners to recalculate math dynamics instantly
-        speedSlider.addEventListener('input', (e) => {
-            flowSpeed = parseFloat(e.target.value);
+        // Live GUI controller event interfaces
+        cohesionSlider.addEventListener('input', (e) => {
+            cohesionWeight = parseFloat(e.target.value);
         });
 
-        densitySlider.addEventListener('input', (e) => {
-            numParticles = parseInt(e.target.value);
-            initParticles();
+        alignmentSlider.addEventListener('input', (e) => {
+            alignmentWeight = parseFloat(e.target.value);
         });
 
-        vectorCheckbox.addEventListener('change', (e) => {
-            showVectors = e.target.checked;
+        separationSlider.addEventListener('input', (e) => {
+            separationWeight = parseFloat(e.target.value);
         });
 
-        // Initialize simulation execution
-        initParticles();
+        countSlider.addEventListener('input', (e) => {
+            numBoids = parseInt(e.target.value);
+            initBoids();
+        });
+
+        // Initialize and execute simulation
+        initBoids();
         animate();
     </script>
 </body>
