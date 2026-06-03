@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
     
     <style>
+        /* --- DESIGN SYSTEM TOKENS --- */
         :root {
             --bg-color: #08080a;
             --text-primary: #ffffff;
@@ -18,11 +19,12 @@
             --font-mono: 'JetBrains Mono', monospace;
         }
 
+        /* --- BASE RESET --- */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            border-radius: 0 !important; /* Enforce hard Swiss edges */
+            border-radius: 0 !important; /* Enforce rigid Swiss edges */
         }
 
         body {
@@ -33,36 +35,35 @@
             overflow-x: hidden;
         }
 
-        /* Ambient background canvas for the 3-Body Problem simulation - placed on top */
+        /* --- PHYSICS INTERACTIVE OVERLAY --- */
         #canvas-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            z-index: 100; /* Brought in front of the text layout */
-            pointer-events: none; /* Allows user to click/select content underneath */
+            z-index: 100; /* overlaying text content */
+            pointer-events: none; /* allows clicking/selecting text beneath */
         }
 
         canvas {
             display: block;
             width: 100%;
             height: 100%;
-            transition: filter 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth transition for Gaussian blur */
+            transition: filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             filter: blur(0px);
         }
 
-        /* Active CSS Gaussian Blur when Dim & Slow Mo is toggled */
         canvas.blurred {
             filter: blur(8px);
         }
 
-        /* Minimalist Swiss Control Panel */
+        /* --- FLOATING CONTROLS --- */
         .sim-controls {
             position: fixed;
             top: 1.5rem;
             right: 1.5rem;
-            z-index: 200; /* Elevated above canvas and standard page links */
+            z-index: 200;
             display: flex;
             gap: 0.5rem;
         }
@@ -105,10 +106,10 @@
             background: rgba(255, 59, 48, 0.05);
         }
 
-        /* Modern Swiss Grid Layout */
+        /* --- EDITORIAL SWISS LAYOUT --- */
         .wrapper {
             position: relative;
-            z-index: 1; /* Sits underneath the overlay physics layer */
+            z-index: 1;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -121,7 +122,6 @@
             -webkit-backdrop-filter: blur(8px);
         }
 
-        /* Top Header Row */
         header {
             display: flex;
             flex-wrap: wrap;
@@ -135,6 +135,13 @@
             border-right: 1px solid var(--border-color);
         }
 
+        .intro-text {
+            margin-top: 1.5rem;
+            color: var(--text-secondary);
+            max-width: 500px;
+            font-size: 1.1rem;
+        }
+
         .header-meta-box {
             flex: 1;
             min-width: 250px;
@@ -145,6 +152,12 @@
             font-family: var(--font-mono);
             font-size: 0.85rem;
             color: var(--text-secondary);
+        }
+
+        .contact-header {
+            color: var(--swiss-red);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
         }
 
         h1 {
@@ -161,7 +174,6 @@
             font-weight: 800;
         }
 
-        /* Abstract Section Layout */
         .section-grid {
             display: flex;
             flex-direction: column;
@@ -174,7 +186,6 @@
             }
         }
 
-        /* Sidebar label index */
         .section-sidebar {
             flex: 1;
             padding: 3rem 2rem;
@@ -207,7 +218,6 @@
             line-height: 1.1;
         }
 
-        /* Main Content Segment inside columns */
         .section-content {
             flex: 3;
             padding: 3rem 2rem;
@@ -216,7 +226,6 @@
             gap: 3rem;
         }
 
-        /* Card blocks in absolute flat structure */
         .item-row {
             display: flex;
             flex-direction: column;
@@ -264,7 +273,6 @@
             margin-bottom: 1rem;
         }
 
-        /* Bullet details */
         .details-list {
             list-style: none;
             display: flex;
@@ -288,7 +296,6 @@
             color: var(--swiss-red);
         }
 
-        /* Flexbox skills grid */
         .skills-flex {
             display: flex;
             flex-wrap: wrap;
@@ -304,7 +311,6 @@
             color: var(--text-primary);
         }
 
-        /* Footer system info */
         footer {
             border-top: 1px solid var(--border-color);
             padding: 3rem 2rem;
@@ -323,7 +329,7 @@
             border-bottom: 1px solid var(--swiss-red);
             transition: all 0.2s;
             position: relative;
-            z-index: 101; /* High enough to be clickable through the transparent pointer-events-none canvas overlay */
+            z-index: 101; /* interactive above canvas layer */
         }
 
         a:hover {
@@ -331,7 +337,6 @@
             color: #fff;
         }
 
-        /* Responsive placement of controls on mobile screens */
         @media (max-width: 600px) {
             .sim-controls {
                 top: auto;
@@ -345,20 +350,13 @@
 </head>
 <body>
 
-    <!-- Minimalist Sim Controls (Now utilizing compact SVG icons) -->
+    <!-- Sim Control Center -->
     <div class="sim-controls">
         <button id="toggle-sim-btn" class="active-state" title="Pause Simulation">
-            <!-- Pause SVG -->
-            <svg id="pause-svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-            </svg>
-            <!-- Play SVG (Hidden by default) -->
-            <svg id="play-svg" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
-                <path d="M8 5v14l11-7z"/>
-            </svg>
+            <svg id="pause-svg" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            <svg id="play-svg" viewBox="0 0 24 24" style="display: none;"><path d="M8 5v14l11-7z"/></svg>
         </button>
         <button id="toggle-dim-btn" title="Toggle Dim & Slow Mode">
-            <!-- Sun SVG (Standard Mode) -->
             <svg id="sun-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="5"></circle>
                 <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -370,30 +368,27 @@
                 <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                 <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
             </svg>
-            <!-- Moon SVG (Dim Mode, Hidden by default) -->
-            <svg id="moon-svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
+            <svg id="moon-svg" viewBox="0 0 24 24" style="display: none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
     </div>
 
-    <!-- 3-Body Problem Gravitational Canvas Overlay (In Front) -->
+    <!-- Active Physical Elements Canvas (Placed on top of DOM) -->
     <div id="canvas-container">
         <canvas id="three-body-canvas"></canvas>
     </div>
 
     <div class="wrapper">
-        <!-- Top Editorial Block -->
+        <!-- Header -->
         <header>
             <div class="header-title-box">
                 <h1>Freddy<br>Charles<span class="accent-bullet">.</span></h1>
-                <p style="margin-top: 1.5rem; color: var(--text-secondary); max-width: 500px; font-size: 1.1rem;">
+                <p class="intro-text">
                     MEng Mechanical Engineering Student at the University of Sheffield. Specialized in multiphysics simulations, mechanical design, and dynamic system modeling.
                 </p>
             </div>
             <div class="header-meta-box">
                 <div>
-                    <div style="color: var(--swiss-red); font-weight: 700; margin-bottom: 0.5rem;">[ CONTACT ]</div>
+                    <div class="contact-header">[ CONTACT ]</div>
                     <div>T: +44-7462794717</div>
                     <div>E: <a href="mailto:freddycharles04@gmail.com">freddycharles04@gmail.com</a></div>
                 </div>
@@ -410,7 +405,6 @@
                 <h2 class="section-title">Qualifications</h2>
             </div>
             <div class="section-content">
-                
                 <div class="item-row">
                     <div class="item-meta">2022 — 2026</div>
                     <div class="item-details">
@@ -421,7 +415,6 @@
                         </ul>
                     </div>
                 </div>
-
                 <div class="item-row">
                     <div class="item-meta">2020 — 2022</div>
                     <div class="item-details">
@@ -432,7 +425,6 @@
                         </ul>
                     </div>
                 </div>
-
             </div>
         </section>
 
@@ -443,8 +435,6 @@
                 <h2 class="section-title">Experience & Projects</h2>
             </div>
             <div class="section-content">
-
-                <!-- Professional Experience 1 -->
                 <div class="item-row">
                     <div class="item-meta">SUMMER 2025</div>
                     <div class="item-details">
@@ -456,8 +446,6 @@
                         </ul>
                     </div>
                 </div>
-
-                <!-- Academic Experience 1 -->
                 <div class="item-row">
                     <div class="item-meta">2025 — 2026</div>
                     <div class="item-details">
@@ -468,8 +456,6 @@
                         </ul>
                     </div>
                 </div>
-
-                <!-- Academic Experience 2 -->
                 <div class="item-row">
                     <div class="item-meta">SUMMER 2024</div>
                     <div class="item-details">
@@ -480,8 +466,6 @@
                         </ul>
                     </div>
                 </div>
-
-                <!-- Academic Experience 3 -->
                 <div class="item-row">
                     <div class="item-meta">2023 — PRESENT</div>
                     <div class="item-details">
@@ -492,7 +476,6 @@
                         </ul>
                     </div>
                 </div>
-
             </div>
         </section>
 
@@ -503,8 +486,6 @@
                 <h2 class="section-title">Skills & Stack</h2>
             </div>
             <div class="section-content">
-
-                <!-- Tech Skills -->
                 <div class="item-row">
                     <div class="item-meta">COMPUTING & CAD</div>
                     <div class="item-details">
@@ -522,8 +503,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Leadership -->
                 <div class="item-row">
                     <div class="item-meta">LEADERSHIP</div>
                     <div class="item-details">
@@ -534,7 +513,6 @@
                         </ul>
                     </div>
                 </div>
-
             </div>
         </section>
 
@@ -553,127 +531,132 @@
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
 
-        // Simulation run states
-        let isSimRunning = true;
-        let isDimSlowMode = false;
-
-        // UI Element Selectors
-        const toggleSimBtn = document.getElementById('toggle-sim-btn');
-        const toggleDimBtn = document.getElementById('toggle-dim-btn');
-        const pauseSvg = document.getElementById('pause-svg');
-        const playSvg = document.getElementById('play-svg');
-        const sunSvg = document.getElementById('sun-svg');
-        const moonSvg = document.getElementById('moon-svg');
-
-        // Toggle Simulation Play/Pause
-        toggleSimBtn.addEventListener('click', () => {
-            isSimRunning = !isSimRunning;
-            if (isSimRunning) {
-                toggleSimBtn.setAttribute('title', 'Pause Simulation');
-                toggleSimBtn.classList.add('active-state');
-                pauseSvg.style.display = 'block';
-                playSvg.style.display = 'none';
-            } else {
-                toggleSimBtn.setAttribute('title', 'Resume Simulation');
-                toggleSimBtn.classList.remove('active-state');
-                pauseSvg.style.display = 'none';
-                playSvg.style.display = 'block';
-            }
-        });
-
-        // Toggle Standard / Dim Slow-mo modes
-        toggleDimBtn.addEventListener('click', () => {
-            isDimSlowMode = !isDimSlowMode;
-            if (isDimSlowMode) {
-                toggleDimBtn.setAttribute('title', 'Toggle Standard Mode');
-                toggleDimBtn.classList.add('active-state');
-                sunSvg.style.display = 'none';
-                moonSvg.style.display = 'block';
-                canvas.classList.add('blurred'); // Apply CSS Gaussian blur
-            } else {
-                toggleDimBtn.setAttribute('title', 'Toggle Dim & Slow Mode');
-                toggleDimBtn.classList.remove('active-state');
-                sunSvg.style.display = 'block';
-                moonSvg.style.display = 'none';
-                canvas.classList.remove('blurred'); // Remove Gaussian blur
-            }
-        });
-
-        // Interaction state track
-        const mouse = {
-            x: -1000,
-            y: -1000,
-            active: false
+        // --- ENCAPSULATED SIMULATION PARAMETERS ---
+        // All velocity-impacting constants systematically divided by 3 for 3x slower execution speed
+        const CONFIG = {
+            G: 375,                         // Gravitational constant (375 / 3)
+            springK: 0.00002 / 3,           // Centrifugal system bounding spring pull
+            softening: 450,                 // Zero distance singularity shield
+            repulseRadius: 140,             // Cursor influence field
+            repulseStrength: 0.1 / 3,       // Cursor deflection multiplier
+            bounceElasticity: 0.85,         // Boundary collision momentum retention
+            numParticles: 30,               // Cosmic background dust particles
+            drag: 0.993,                    // Ambient atmospheric drag
+            dtSlow: 0.25,                   // Step scalar for Slow-Mo active state
+            
+            // Repulsion system settings (Standard Model / Potential Barrier)
+            strongRepulsionThreshold: 75,   // Expanded boundary to allow gentle initial interaction
+            strongRepulsionStrength: 60,    // Softened constant (180 / 3)
+            proximityChargeRate: 0.001,     // Slower speed of charge build-up when close (0.003 / 3)
+            proximityDischargeRate: 0.0017  // Slower dissipation rate of charge once separated (0.005 / 3)
         };
 
-        // Track scrolling state
-        let lastScrollY = window.scrollY;
+        // --- GLOBAL RUN STATE ---
+        const STATE = {
+            isSimRunning: true,
+            isDimSlowMode: false,
+            lastScrollY: window.scrollY,
+            mouse: { x: -1000, y: -1000, active: false },
+            
+            // Charge mapping accumulator for body pairs to calculate build-up delay
+            proximityCharge: {
+                '0-1': 0,
+                '0-2': 0,
+                '1-2': 0
+            }
+        };
 
+        // --- CACHED SELECTORS ---
+        const UI = {
+            toggleSimBtn: document.getElementById('toggle-sim-btn'),
+            toggleDimBtn: document.getElementById('toggle-dim-btn'),
+            pauseSvg: document.getElementById('pause-svg'),
+            playSvg: document.getElementById('play-svg'),
+            sunSvg: document.getElementById('sun-svg'),
+            moonSvg: document.getElementById('moon-svg')
+        };
+
+        // --- PERSISTENT RESIZING ---
         window.addEventListener('resize', () => {
+            const lastWidth = width;
+            const lastHeight = height;
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            initPhysics();
+
+            // Shift current bodies proportionally instead of resetting their orbits
+            bodies.forEach(b => {
+                b.x = (b.x / lastWidth) * width;
+                b.y = (b.y / lastHeight) * height;
+            });
         });
 
-        // Mouse coordinates mapping
-        window.addEventListener('mousemove', (e) => {
-            mouse.x = e.clientX;
-            mouse.y = e.clientY;
-            mouse.active = true;
+        // --- UNIFIED POINTER CONTROLS ---
+        window.addEventListener('pointermove', (e) => {
+            STATE.mouse.x = e.clientX;
+            STATE.mouse.y = e.clientY;
+            STATE.mouse.active = true;
         });
 
-        window.addEventListener('mouseleave', () => {
-            mouse.active = false;
-        });
+        const disablePointer = () => { STATE.mouse.active = false; };
+        window.addEventListener('pointerleave', disablePointer);
+        window.addEventListener('pointercancel', disablePointer);
 
-        // Mobile touch mapping
-        window.addEventListener('touchmove', (e) => {
-            if (e.touches.length > 0) {
-                mouse.x = e.touches[0].clientX;
-                mouse.y = e.touches[0].clientY;
-                mouse.active = true;
+        // --- UI INTERACTIVITY ---
+        UI.toggleSimBtn.addEventListener('click', () => {
+            STATE.isSimRunning = !STATE.isSimRunning;
+            if (STATE.isSimRunning) {
+                UI.toggleSimBtn.setAttribute('title', 'Pause Simulation');
+                UI.toggleSimBtn.classList.add('active-state');
+                UI.pauseSvg.style.display = 'block';
+                UI.playSvg.style.display = 'none';
+            } else {
+                UI.toggleSimBtn.setAttribute('title', 'Resume Simulation');
+                UI.toggleSimBtn.classList.remove('active-state');
+                UI.pauseSvg.style.display = 'none';
+                UI.playSvg.style.display = 'block';
             }
-        }, { passive: true });
-
-        window.addEventListener('touchend', () => {
-            mouse.active = false;
         });
 
-        // Listen for scroll interaction
+        UI.toggleDimBtn.addEventListener('click', () => {
+            STATE.isDimSlowMode = !STATE.isDimSlowMode;
+            if (STATE.isDimSlowMode) {
+                UI.toggleDimBtn.setAttribute('title', 'Toggle Standard Mode');
+                UI.toggleDimBtn.classList.add('active-state');
+                UI.sunSvg.style.display = 'none';
+                UI.moonSvg.style.display = 'block';
+                canvas.classList.add('blurred');
+            } else {
+                UI.toggleDimBtn.setAttribute('title', 'Toggle Dim & Slow Mode');
+                UI.toggleDimBtn.classList.remove('active-state');
+                UI.sunSvg.style.display = 'block';
+                UI.moonSvg.style.display = 'none';
+                canvas.classList.remove('blurred');
+            }
+        });
+
+        // --- OPPOSING SCROLL INERTIA ---
         window.addEventListener('scroll', () => {
-            if (!isSimRunning) return; // Ignore scrolling impact when paused
+            if (!STATE.isSimRunning) return;
 
             const currentScrollY = window.scrollY;
-            const deltaY = currentScrollY - lastScrollY;
-            lastScrollY = currentScrollY;
+            const deltaY = currentScrollY - STATE.lastScrollY;
+            STATE.lastScrollY = currentScrollY;
 
-            // Apply dampening on the scroll delta if we are in slow mode
-            const scrollDampen = isDimSlowMode ? 0.25 : 1.0;
+            const scrollDampen = STATE.isDimSlowMode ? 0.25 : 1.0;
 
-            // Scroll forces applied to bodies and dust (pushing them in the opposite direction of scroll movement)
+            // Scroll force values divided by 3 to remain in harmony with the slowed engine speed
             bodies.forEach(b => {
-                b.vy -= deltaY * 0.03 * scrollDampen;
-                b.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.015 * scrollDampen;
+                b.vy -= deltaY * 0.01 * scrollDampen;
+                b.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.005 * scrollDampen;
             });
 
             particles.forEach(p => {
-                p.vy -= deltaY * 0.02 * scrollDampen;
-                p.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.01 * scrollDampen;
+                p.vy -= deltaY * 0.0067 * scrollDampen;
+                p.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.0033 * scrollDampen;
             });
         });
 
-        // 3-Body parameters (all physics constants halved for 50% speed reduction)
-        const G = 375; // Gravitational constant (halved from 750)
-        const springK = 0.00002; // Gentle spring pull (halved from 0.00004)
-        const softening = 450; 
-        const repulseRadius = 140; 
-        const repulseStrength = 0.1; // Mouse repulsion strength (halved from 0.2)
-        const bounceElasticity = 0.85; 
-
-        let bodies = [];
-        let particles = [];
-        const numParticles = 30; 
-
+        // --- KINETIC BODY (PLANETS) CLASS ---
         class Body {
             constructor(x, y, vx, vy, mass, color) {
                 this.x = x;
@@ -682,60 +665,63 @@
                 this.vy = vy;
                 this.mass = mass;
                 this.color = color;
-                this.radius = 9.0; // Enriched planet radius from 4.5 to 9.0 (planet scale increase)
+                this.radius = 9.0; 
                 this.trail = [];
                 this.maxTrail = 180;
             }
 
             update() {
-                if (!isSimRunning) return;
+                if (!STATE.isSimRunning) return;
 
-                // Scale speed dynamically if Slow-Mo Mode is active
-                const dt = isDimSlowMode ? 0.25 : 1.0;
+                const dt = STATE.isDimSlowMode ? CONFIG.dtSlow : 1.0;
 
-                // Gentle pull back to center
-                let dx = (width / 2) - this.x;
-                let dy = (height / 2) - this.y;
-                this.vx += dx * springK * dt;
-                this.vy += dy * springK * dt;
+                // Center constraint
+                const dx = (width / 2) - this.x;
+                const dy = (height / 2) - this.y;
+                this.vx += dx * CONFIG.springK * dt;
+                this.vy += dy * CONFIG.springK * dt;
 
-                // Push away from active mouse pointer (dampened interaction)
-                if (mouse.active) {
-                    let mdx = this.x - mouse.x;
-                    let mdy = this.y - mouse.y;
-                    let mDistSq = mdx * mdx + mdy * mdy;
-                    let mDist = Math.sqrt(mDistSq);
+                // Deflection push
+                if (STATE.mouse.active) {
+                    const mdx = this.x - STATE.mouse.x;
+                    const mdy = this.y - STATE.mouse.y;
+                    const mDistSq = mdx * mdx + mdy * mdy;
                     
-                    if (mDist < repulseRadius && mDist > 0) {
-                        let force = (repulseRadius - mDist) / repulseRadius;
-                        this.vx += (mdx / mDist) * force * repulseStrength * dt;
-                        this.vy += (mdy / mDist) * force * repulseStrength * dt;
+                    if (mDistSq < CONFIG.repulseRadius * CONFIG.repulseRadius) {
+                        const mDist = Math.sqrt(mDistSq);
+                        if (mDist > 0) {
+                            const force = (CONFIG.repulseRadius - mDist) / CONFIG.repulseRadius;
+                            this.vx += (mdx / mDist) * force * CONFIG.repulseStrength * dt;
+                            this.vy += (mdy / mDist) * force * CONFIG.repulseStrength * dt;
+                        }
                     }
                 }
 
-                // Smooth dampening drag
-                this.vx *= 0.993;
-                this.vy *= 0.993;
+                // Air resistance
+                this.vx *= CONFIG.drag;
+                this.vy *= CONFIG.drag;
 
-                // Integrate acceleration vectors into positions scaled by delta time
+                // Position integration
                 this.x += this.vx * dt;
                 this.y += this.vy * dt;
 
-                // Boundary Collisions (Screen Edges)
+                // Rigid collision containment
+                const limitX = width - this.radius;
                 if (this.x - this.radius < 0) {
                     this.x = this.radius;
-                    this.vx = Math.abs(this.vx) * bounceElasticity;
-                } else if (this.x + this.radius > width) {
-                    this.x = width - this.radius;
-                    this.vx = -Math.abs(this.vx) * bounceElasticity;
+                    this.vx = Math.abs(this.vx) * CONFIG.bounceElasticity;
+                } else if (this.x > limitX) {
+                    this.x = limitX;
+                    this.vx = -Math.abs(this.vx) * CONFIG.bounceElasticity;
                 }
 
+                const limitY = height - this.radius;
                 if (this.y - this.radius < 0) {
                     this.y = this.radius;
-                    this.vy = Math.abs(this.vy) * bounceElasticity;
-                } else if (this.y + this.radius > height) {
-                    this.y = height - this.radius;
-                    this.vy = -Math.abs(this.vy) * bounceElasticity;
+                    this.vy = Math.abs(this.vy) * CONFIG.bounceElasticity;
+                } else if (this.y > limitY) {
+                    this.y = limitY;
+                    this.vy = -Math.abs(this.vy) * CONFIG.bounceElasticity;
                 }
 
                 this.trail.push({ x: this.x, y: this.y });
@@ -745,33 +731,33 @@
             }
 
             draw() {
-                // Reduced dimming factor: 0.55 opacity multiplier instead of 0.2
-                const opacityMultiplier = isDimSlowMode ? 0.55 : 1.0;
+                const opacityMultiplier = STATE.isDimSlowMode ? 0.55 : 1.0;
+                const len = this.trail.length;
 
-                // Beautiful faded line segments
-                if (this.trail.length > 1) {
-                    for (let i = 1; i < this.trail.length; i++) {
+                // Streamlined multi-alpha trail drawing
+                if (len > 1) {
+                    for (let i = 1; i < len; i++) {
                         ctx.beginPath();
                         ctx.moveTo(this.trail[i - 1].x, this.trail[i - 1].y);
                         ctx.lineTo(this.trail[i].x, this.trail[i].y);
                         ctx.strokeStyle = this.color;
-                        ctx.globalAlpha = (i / this.trail.length) * 0.35 * opacityMultiplier;
+                        ctx.globalAlpha = (i / len) * 0.35 * opacityMultiplier;
                         ctx.lineWidth = 1.2;
                         ctx.stroke();
                     }
                 }
 
-                // Render current node core
+                // Core representation
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
-                ctx.globalAlpha = 1.0 * opacityMultiplier;
+                ctx.globalAlpha = opacityMultiplier;
                 ctx.fill();
-                ctx.globalAlpha = 1.0; // Reset global alpha
+                ctx.globalAlpha = 1.0;
             }
         }
 
-        // Low mass cosmic dust particles
+        // --- SUBTLE COSMIC BACKGROUND PARTICLES ---
         class DustParticle {
             constructor() {
                 this.reset();
@@ -780,9 +766,9 @@
             reset() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                // Initial velocities halved (scaled down from 0.8 to 0.4)
-                this.vx = (Math.random() - 0.5) * 0.4;
-                this.vy = (Math.random() - 0.5) * 0.4;
+                // Dust particle initial drift velocity divided by 3 (was 0.8 / 0.4)
+                this.vx = (Math.random() - 0.5) * 0.133;
+                this.vy = (Math.random() - 0.5) * 0.133;
                 this.alpha = Math.random() * 0.25 + 0.05;
                 this.color = Math.random() > 0.5 ? '#8e8e93' : '#ffffff';
                 this.trail = [];
@@ -790,40 +776,42 @@
             }
 
             update() {
-                if (!isSimRunning) return;
+                if (!STATE.isSimRunning) return;
 
-                const dt = isDimSlowMode ? 0.25 : 1.0;
+                const dt = STATE.isDimSlowMode ? CONFIG.dtSlow : 1.0;
 
-                // Gravity calculations from all three massive bodies
+                // Gravitational force accumulators
                 bodies.forEach(b => {
-                    let dx = b.x - this.x;
-                    let dy = b.y - this.y;
-                    let distSq = dx*dx + dy*dy;
-                    let dist = Math.sqrt(distSq);
+                    const dx = b.x - this.x;
+                    const dy = b.y - this.y;
+                    const distSq = dx * dx + dy * dy;
                     
-                    if (dist < 12) {
+                    if (distSq < 144) { // radius 12 limit
                         this.reset();
                         return;
                     }
 
-                    // Gravity pull halved (scaled down from 0.006 to 0.003)
-                    let force = (G * b.mass) / (distSq + softening);
-                    this.vx += (dx / dist) * force * 0.003 * dt;
-                    this.vy += (dy / dist) * force * 0.003 * dt;
+                    const dist = Math.sqrt(distSq);
+                    const force = (CONFIG.G * b.mass) / (distSq + CONFIG.softening);
+                    // Gravitational drift pull factor divided by 3 (0.003 -> 0.001)
+                    this.vx += (dx / dist) * force * 0.001 * dt;
+                    this.vy += (dy / dist) * force * 0.001 * dt;
                 });
 
-                // Subtle particle mouse repulsion halved
-                if (mouse.active) {
-                    let mdx = this.x - mouse.x;
-                    let mdy = this.y - mouse.y;
-                    let mDistSq = mdx * mdx + mdy * mdy;
-                    let mDist = Math.sqrt(mDistSq);
-                    let particleRepulseRadius = 90;
-
-                    if (mDist < particleRepulseRadius && mDist > 0) {
-                        let force = (particleRepulseRadius - mDist) / particleRepulseRadius;
-                        this.vx += (mdx / mDist) * force * 0.15 * dt;
-                        this.vy += (mdy / mDist) * force * 0.15 * dt;
+                // Deflection from cursor
+                if (STATE.mouse.active) {
+                    const mdx = this.x - STATE.mouse.x;
+                    const mdy = this.y - STATE.mouse.y;
+                    const mDistSq = mdx * mdx + mdy * mdy;
+                    
+                    if (mDistSq < 8100) { // 90px interaction
+                        const mDist = Math.sqrt(mDistSq);
+                        if (mDist > 0) {
+                            const force = (90 - mDist) / 90;
+                            // Cursor push pull factor divided by 3 (0.15 -> 0.05)
+                            this.vx += (mdx / mDist) * force * 0.05 * dt;
+                            this.vy += (mdy / mDist) * force * 0.05 * dt;
+                        }
                     }
                 }
 
@@ -844,84 +832,92 @@
             }
 
             draw() {
-                // Reduced dimming factor: 0.55 opacity multiplier instead of 0.2
-                const opacityMultiplier = isDimSlowMode ? 0.55 : 1.0;
+                const opacityMultiplier = STATE.isDimSlowMode ? 0.55 : 1.0;
+                const len = this.trail.length;
 
-                if (this.trail.length < 2) return;
-                for (let i = 1; i < this.trail.length; i++) {
+                if (len < 2) return;
+                for (let i = 1; i < len; i++) {
                     ctx.beginPath();
                     ctx.moveTo(this.trail[i - 1].x, this.trail[i - 1].y);
                     ctx.lineTo(this.trail[i].x, this.trail[i].y);
                     ctx.strokeStyle = this.color;
-                    ctx.globalAlpha = (i / this.trail.length) * this.alpha * 0.6 * opacityMultiplier;
+                    ctx.globalAlpha = (i / len) * this.alpha * 0.6 * opacityMultiplier;
                     ctx.lineWidth = 0.6;
                     ctx.stroke();
                 }
-                ctx.globalAlpha = 1.0; // Reset global alpha
+                ctx.globalAlpha = 1.0;
             }
         }
+
+        let bodies = [];
+        let particles = [];
 
         function initPhysics() {
             const cx = width / 2;
             const cy = height / 2;
 
-            // Initial velocities halved to begin orbits gently
+            // Initial orbital velocities divided by 3 to match the slowed system
             bodies = [
-                // Body 1 (Swiss Red)
-                new Body(cx - 160, cy - 80, -0.15, 0.55, 2.5, '#ff3b30'),
-                // Body 2 (Pure White)
-                new Body(cx + 160, cy - 80, 0.15, -0.55, 2.5, '#ffffff'),
-                // Body 3 (Slate Gray)
-                new Body(cx, cy + 140, 0.3, 0.05, 2.5, '#48484a')
+                new Body(cx - 160, cy - 80, -0.05, 0.1833, 2.5, '#ff3b30'),
+                new Body(cx + 160, cy - 80, 0.05, -0.1833, 2.5, '#ffffff'),
+                new Body(cx, cy + 140, 0.1, 0.0167, 2.5, '#48484a')
             ];
 
-            particles = [];
-            for (let i = 0; i < numParticles; i++) {
-                particles.push(new DustParticle());
-            }
+            particles = Array.from({ length: CONFIG.numParticles }, () => new DustParticle());
         }
 
+        // Mutual multi-body calculation
         function calculateForces() {
-            if (!isSimRunning) return;
+            if (!STATE.isSimRunning) return;
 
-            const dt = isDimSlowMode ? 0.25 : 1.0;
+            const dt = STATE.isDimSlowMode ? CONFIG.dtSlow : 1.0;
 
-            // Pairwise Mutual Gravitational Calculation
-            // Force 1-2
-            let dx12 = bodies[1].x - bodies[0].x;
-            let dy12 = bodies[1].y - bodies[0].y;
-            let dSq12 = dx12*dx12 + dy12*dy12;
-            let dist12 = Math.sqrt(dSq12);
-            if (dist12 < 0.1) dist12 = 0.1; // Safeguard against division by zero (NaN lock up)
-            let f12 = (G * bodies[0].mass * bodies[1].mass) / (dSq12 + softening);
+            const calculatePairForce = (idx1, idx2) => {
+                const b1 = bodies[idx1];
+                const b2 = bodies[idx2];
+                const pairKey = `${idx1}-${idx2}`;
 
-            // Force 1-3
-            let dx13 = bodies[2].x - bodies[0].x;
-            let dy13 = bodies[2].y - bodies[0].y;
-            let dSq13 = dx13*dx13 + dy13*dy13;
-            let dist13 = Math.sqrt(dSq13);
-            if (dist13 < 0.1) dist13 = 0.1; // Safeguard against division by zero (NaN lock up)
-            let f13 = (G * bodies[0].mass * bodies[2].mass) / (dSq13 + softening);
+                const dx = b2.x - b1.x;
+                const dy = b2.y - b1.y;
+                const dSq = dx * dx + dy * dy;
+                let dist = Math.sqrt(dSq);
+                if (dist < 0.1) dist = 0.1;
 
-            // Force 2-3
-            let dx23 = bodies[2].x - bodies[1].x;
-            let dy23 = bodies[2].y - bodies[1].y;
-            let dSq23 = dx23*dx23 + dy23*dy23;
-            let dist23 = Math.sqrt(dSq23);
-            if (dist23 < 0.1) dist23 = 0.1; // Safeguard against division by zero (NaN lock up)
-            let f23 = (G * bodies[1].mass * bodies[2].mass) / (dSq23 + softening);
+                // Base attractive gravity
+                let f = (CONFIG.G * b1.mass * b2.mass) / (dSq + CONFIG.softening);
 
-            // Resolve vectors and apply to trajectories scaled by delta time
-            bodies[0].vx += (((dx12 / dist12) * f12 + (dx13 / dist13) * f13) / bodies[0].mass) * dt;
-            bodies[0].vy += (((dy12 / dist12) * f12 + (dy13 / dist13) * f13) / bodies[0].mass) * dt;
+                // Delay-based short-range repulsion field logic
+                if (dist < CONFIG.strongRepulsionThreshold) {
+                    // Accumulate proximity time counter proportionally
+                    STATE.proximityCharge[pairKey] = Math.min(1.0, STATE.proximityCharge[pairKey] + CONFIG.proximityChargeRate * dt);
+                    
+                    const overlap = CONFIG.strongRepulsionThreshold - dist;
+                    // Linear overlap force calculation (gentler and less abrupt)
+                    const baseRepel = CONFIG.strongRepulsionStrength * (overlap / dist);
+                    
+                    // Multiply repulsion scaling by the proximity accumulation charge
+                    const fRepel = baseRepel * STATE.proximityCharge[pairKey];
+                    f -= fRepel; 
+                } else {
+                    // Dissipate charge once separated
+                    STATE.proximityCharge[pairKey] = Math.max(0.0, STATE.proximityCharge[pairKey] - CONFIG.proximityDischargeRate * dt);
+                }
 
-            bodies[1].vx += (((-dx12 / dist12) * f12 + (dx23 / dist23) * f23) / bodies[1].mass) * dt;
-            bodies[1].vy += (((-dy12 / dist12) * f12 + (dy23 / dist23) * f23) / bodies[1].mass) * dt;
+                const fx = (dx / dist) * f * dt;
+                const fy = (dy / dist) * f * dt;
 
-            bodies[2].vx += (((-dx13 / dist13) * f13 + (-dx23 / dist23) * f23) / bodies[2].mass) * dt;
-            bodies[2].vy += (((-dy13 / dist13) * f13 + (-dy23 / dist23) * f23) / bodies[2].mass) * dt;
+                b1.vx += fx / b1.mass;
+                b1.vy += fy / b1.mass;
+                b2.vx -= fx / b2.mass;
+                b2.vy -= fy / b2.mass;
+            };
+
+            calculatePairForce(0, 1);
+            calculatePairForce(0, 2);
+            calculatePairForce(1, 2);
         }
 
+        // Main kinematic frame-loop
         function animate() {
             ctx.clearRect(0, 0, width, height);
 
@@ -940,7 +936,7 @@
             requestAnimationFrame(animate);
         }
 
-        // Initialize and execute sequence
+        // Execution initiation
         initPhysics();
         animate();
     </script>
