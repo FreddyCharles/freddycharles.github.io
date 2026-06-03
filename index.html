@@ -525,24 +525,23 @@
 
     <!-- 3-Body Problem Physics Engine Script -->
     <script>
+        // Cache canvas and context elements first to prevent scope initialization issues
         const canvas = document.getElementById('three-body-canvas');
         const ctx = canvas.getContext('2d');
 
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
-
-        // --- ENCAPSULATED SIMULATION PARAMETERS ---
-        // All velocity-impacting constants systematically divided by 3 for 3x slower execution speed
+        // =========================================================================
+        // 1. GLOBAL SETTINGS & CONFIGURATIONS
+        // =========================================================================
         const CONFIG = {
             G: 375,                         // Gravitational constant (375 / 3)
             springK: 0.00002 / 3,           // Centrifugal system bounding spring pull
             softening: 450,                 // Zero distance singularity shield
             repulseRadius: 140,             // Cursor influence field
-            repulseStrength: 0.01,       // Cursor deflection multiplier
+            repulseStrength: 0.01,          // Cursor deflection multiplier
             bounceElasticity: 0.85,         // Boundary collision momentum retention
             numParticles: 30,               // Cosmic background dust particles
             drag: 0.993,                    // Ambient atmospheric drag
-            dtSlow: 0.5,                   // Step scalar for Slow-Mo active state
+            dtSlow: 0.5,                    // Step scalar for Slow-Mo active state
             
             // Repulsion system settings (Standard Model / Potential Barrier)
             strongRepulsionThreshold: 75,   // Expanded boundary to allow gentle initial interaction
@@ -551,14 +550,24 @@
             proximityDischargeRate: 0.0017  // Slower dissipation rate of charge once separated (0.005 / 3)
         };
 
-        // --- GLOBAL RUN STATE ---
+        // =========================================================================
+        // 2. SIMULATION STATE REGISTRY
+        // =========================================================================
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
         const STATE = {
-            isSimRunning: true,
-            isDimSlowMode: false,
-            lastScrollY: window.scrollY,
-            mouse: { x: -1000, y: -1000, active: false },
+            isSimRunning: true,             // Toggled via Play/Pause button
+            isDimSlowMode: false,           // Toggled via Sun/Moon button
+            lastScrollY: window.scrollY,    // Cached window position to calculate scroll delta
+            mouse: { 
+                x: -1000, 
+                y: -1000, 
+                active: false 
+            },
             
-            // Charge mapping accumulator for body pairs to calculate build-up delay
+            // Charge values tracked between body pairs. Charge increases when they 
+            // remain within repulsion threshold, gradually scaling up counter forces.
             proximityCharge: {
                 '0-1': 0,
                 '0-2': 0,
@@ -566,7 +575,9 @@
             }
         };
 
-        // --- CACHED SELECTORS ---
+        // =========================================================================
+        // 3. UI ELEMENT SELECTORS & BINDINGS
+        // =========================================================================
         const UI = {
             toggleSimBtn: document.getElementById('toggle-sim-btn'),
             toggleDimBtn: document.getElementById('toggle-dim-btn'),
@@ -576,87 +587,16 @@
             moonSvg: document.getElementById('moon-svg')
         };
 
-        // --- PERSISTENT RESIZING ---
-        window.addEventListener('resize', () => {
-            const lastWidth = width;
-            const lastHeight = height;
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+        // =========================================================================
+        // 4. HELPER FUNCTIONS
+        // =========================================================================
+        const getProximityKey = (idx1, idx2) => {
+            return idx1 < idx2 ? `${idx1}-${idx2}` : `${idx2}-${idx1}`;
+        };
 
-            // Shift current bodies proportionally instead of resetting their orbits
-            bodies.forEach(b => {
-                b.x = (b.x / lastWidth) * width;
-                b.y = (b.y / lastHeight) * height;
-            });
-        });
-
-        // --- UNIFIED POINTER CONTROLS ---
-        window.addEventListener('pointermove', (e) => {
-            STATE.mouse.x = e.clientX;
-            STATE.mouse.y = e.clientY;
-            STATE.mouse.active = true;
-        });
-
-        const disablePointer = () => { STATE.mouse.active = false; };
-        window.addEventListener('pointerleave', disablePointer);
-        window.addEventListener('pointercancel', disablePointer);
-
-        // --- UI INTERACTIVITY ---
-        UI.toggleSimBtn.addEventListener('click', () => {
-            STATE.isSimRunning = !STATE.isSimRunning;
-            if (STATE.isSimRunning) {
-                UI.toggleSimBtn.setAttribute('title', 'Pause Simulation');
-                UI.toggleSimBtn.classList.add('active-state');
-                UI.pauseSvg.style.display = 'block';
-                UI.playSvg.style.display = 'none';
-            } else {
-                UI.toggleSimBtn.setAttribute('title', 'Resume Simulation');
-                UI.toggleSimBtn.classList.remove('active-state');
-                UI.pauseSvg.style.display = 'none';
-                UI.playSvg.style.display = 'block';
-            }
-        });
-
-        UI.toggleDimBtn.addEventListener('click', () => {
-            STATE.isDimSlowMode = !STATE.isDimSlowMode;
-            if (STATE.isDimSlowMode) {
-                UI.toggleDimBtn.setAttribute('title', 'Toggle Standard Mode');
-                UI.toggleDimBtn.classList.add('active-state');
-                UI.sunSvg.style.display = 'none';
-                UI.moonSvg.style.display = 'block';
-                canvas.classList.add('blurred');
-            } else {
-                UI.toggleDimBtn.setAttribute('title', 'Toggle Dim & Slow Mode');
-                UI.toggleDimBtn.classList.remove('active-state');
-                UI.sunSvg.style.display = 'block';
-                UI.moonSvg.style.display = 'none';
-                canvas.classList.remove('blurred');
-            }
-        });
-
-        // --- OPPOSING SCROLL INERTIA ---
-        window.addEventListener('scroll', () => {
-            if (!STATE.isSimRunning) return;
-
-            const currentScrollY = window.scrollY;
-            const deltaY = currentScrollY - STATE.lastScrollY;
-            STATE.lastScrollY = currentScrollY;
-
-            const scrollDampen = STATE.isDimSlowMode ? 0.25 : 1.0;
-
-            // Scroll force values divided by 3 to remain in harmony with the slowed engine speed
-            bodies.forEach(b => {
-                b.vy -= deltaY * 0.01 * scrollDampen;
-                b.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.005 * scrollDampen;
-            });
-
-            particles.forEach(p => {
-                p.vy -= deltaY * 0.0067 * scrollDampen;
-                p.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.0033 * scrollDampen;
-            });
-        });
-
-        // --- KINETIC BODY (PLANETS) CLASS ---
+        // =========================================================================
+        // 5. PHYSICS & RENDER OBJECTS (CLASSES)
+        // =========================================================================
         class Body {
             constructor(x, y, vx, vy, mass, color) {
                 this.x = x;
@@ -665,9 +605,9 @@
                 this.vy = vy;
                 this.mass = mass;
                 this.color = color;
-                this.radius = 9.0; 
+                this.radius = CONFIG.planetRadius || 9.0; 
                 this.trail = [];
-                this.maxTrail = 180;
+                this.maxTrail = CONFIG.maxTrailLength || 180;
             }
 
             update() {
@@ -675,13 +615,13 @@
 
                 const dt = STATE.isDimSlowMode ? CONFIG.dtSlow : 1.0;
 
-                // Center constraint
+                // Center bounding constraint pull
                 const dx = (width / 2) - this.x;
                 const dy = (height / 2) - this.y;
                 this.vx += dx * CONFIG.springK * dt;
                 this.vy += dy * CONFIG.springK * dt;
 
-                // Deflection push
+                // Input cursor deflection push
                 if (STATE.mouse.active) {
                     const mdx = this.x - STATE.mouse.x;
                     const mdy = this.y - STATE.mouse.y;
@@ -697,15 +637,15 @@
                     }
                 }
 
-                // Air resistance
+                // Smooth aerodynamic friction
                 this.vx *= CONFIG.drag;
                 this.vy *= CONFIG.drag;
 
-                // Position integration
+                // Commit positions
                 this.x += this.vx * dt;
                 this.y += this.vy * dt;
 
-                // Rigid collision containment
+                // Screen Boundary Collisions with elastic bounce
                 const limitX = width - this.radius;
                 if (this.x - this.radius < 0) {
                     this.x = this.radius;
@@ -724,6 +664,7 @@
                     this.vy = -Math.abs(this.vy) * CONFIG.bounceElasticity;
                 }
 
+                // Append and trim render trail array
                 this.trail.push({ x: this.x, y: this.y });
                 if (this.trail.length > this.maxTrail) {
                     this.trail.shift();
@@ -734,7 +675,7 @@
                 const opacityMultiplier = STATE.isDimSlowMode ? 0.55 : 1.0;
                 const len = this.trail.length;
 
-                // Streamlined multi-alpha trail drawing
+                // Draw orbital gradient tail
                 if (len > 1) {
                     for (let i = 1; i < len; i++) {
                         ctx.beginPath();
@@ -747,17 +688,16 @@
                     }
                 }
 
-                // Core representation
+                // Draw solid central nucleus
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
                 ctx.globalAlpha = opacityMultiplier;
                 ctx.fill();
-                ctx.globalAlpha = 1.0;
+                ctx.globalAlpha = 1.0; // Reset canvas context alpha
             }
         }
 
-        // --- SUBTLE COSMIC BACKGROUND PARTICLES ---
         class DustParticle {
             constructor() {
                 this.reset();
@@ -766,9 +706,8 @@
             reset() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                // Dust particle initial drift velocity divided by 3 (was 0.8 / 0.4)
-                this.vx = (Math.random() - 0.5) * 0.133;
-                this.vy = (Math.random() - 0.5) * 0.133;
+                this.vx = (Math.random() - 0.5) * 0.4; // Restored matching G=375 speeds
+                this.vy = (Math.random() - 0.5) * 0.4;
                 this.alpha = Math.random() * 0.25 + 0.05;
                 this.color = Math.random() > 0.5 ? '#8e8e93' : '#ffffff';
                 this.trail = [];
@@ -780,22 +719,21 @@
 
                 const dt = STATE.isDimSlowMode ? CONFIG.dtSlow : 1.0;
 
-                // Gravitational force accumulators
+                // Gravity calculations from all massive planets
                 bodies.forEach(b => {
                     const dx = b.x - this.x;
                     const dy = b.y - this.y;
                     const distSq = dx * dx + dy * dy;
                     
-                    if (distSq < 144) { // radius 12 limit
+                    if (distSq < 144) { // Collapse trigger if too close to center
                         this.reset();
                         return;
                     }
 
                     const dist = Math.sqrt(distSq);
                     const force = (CONFIG.G * b.mass) / (distSq + CONFIG.softening);
-                    // Gravitational drift pull factor divided by 3 (0.003 -> 0.001)
-                    this.vx += (dx / dist) * force * 0.001 * dt;
-                    this.vy += (dy / dist) * force * 0.001 * dt;
+                    this.vx += (dx / dist) * force * 0.003 * dt; // Restored matching G=375 scale factors
+                    this.vy += (dy / dist) * force * 0.003 * dt;
                 });
 
                 // Deflection from cursor
@@ -804,13 +742,12 @@
                     const mdy = this.y - STATE.mouse.y;
                     const mDistSq = mdx * mdx + mdy * mdy;
                     
-                    if (mDistSq < 8100) { // 90px interaction
+                    if (mDistSq < 8100) { 
                         const mDist = Math.sqrt(mDistSq);
                         if (mDist > 0) {
                             const force = (90 - mDist) / 90;
-                            // Cursor push pull factor divided by 3 (0.15 -> 0.05)
-                            this.vx += (mdx / mDist) * force * 0.05 * dt;
-                            this.vy += (mdy / mDist) * force * 0.05 * dt;
+                            this.vx += (mdx / mDist) * force * 0.15 * dt; // Restored matching G=375 scale factors
+                            this.vy += (mdy / mDist) * force * 0.15 * dt;
                         }
                     }
                 }
@@ -849,53 +786,43 @@
             }
         }
 
+        // =========================================================================
+        // 6. CORE ENGINE LOGIC (FORCES & PHYSICS)
+        // =========================================================================
         let bodies = [];
         let particles = [];
 
-        function initPhysics() {
-            const cx = width / 2;
-            const cy = height / 2;
-
-            // Initial orbital velocities divided by 3 to match the slowed system
-            bodies = [
-                new Body(cx - 160, cy - 80, -0.05, 0.1833, 2.5, '#ff3b30'),
-                new Body(cx + 160, cy - 80, 0.05, -0.1833, 2.5, '#ffffff'),
-                new Body(cx, cy + 140, 0.1, 0.0167, 2.5, '#48484a')
-            ];
-
-            particles = Array.from({ length: CONFIG.numParticles }, () => new DustParticle());
-        }
-
-        // Mutual multi-body calculation
         function calculateForces() {
             if (!STATE.isSimRunning) return;
 
             const dt = STATE.isDimSlowMode ? CONFIG.dtSlow : 1.0;
 
-            const calculatePairForce = (idx1, idx2) => {
+            // Compute pairwise gravity & Standard Model proximity repulsion
+            const computeInteractiveForces = (idx1, idx2) => {
                 const b1 = bodies[idx1];
                 const b2 = bodies[idx2];
-                const pairKey = `${idx1}-${idx2}`;
+                const pairKey = getProximityKey(idx1, idx2);
 
                 const dx = b2.x - b1.x;
                 const dy = b2.y - b1.y;
                 const dSq = dx * dx + dy * dy;
+                
                 let dist = Math.sqrt(dSq);
                 if (dist < 0.1) dist = 0.1;
 
-                // Base attractive gravity
+                // Universal gravitational attraction
                 let f = (CONFIG.G * b1.mass * b2.mass) / (dSq + CONFIG.softening);
 
-                // Delay-based short-range repulsion field logic
+                // Short-range delay repulsion mechanics
                 if (dist < CONFIG.strongRepulsionThreshold) {
-                    // Accumulate proximity time counter proportionally
+                    // Accumulate repulsion charge slowly
                     STATE.proximityCharge[pairKey] = Math.min(1.0, STATE.proximityCharge[pairKey] + CONFIG.proximityChargeRate * dt);
                     
+                    // Linear overlap scaling
                     const overlap = CONFIG.strongRepulsionThreshold - dist;
-                    // Linear overlap force calculation (gentler and less abrupt)
                     const baseRepel = CONFIG.strongRepulsionStrength * (overlap / dist);
                     
-                    // Multiply repulsion scaling by the proximity accumulation charge
+                    // Apply charge scaling to delay structural deflection
                     const fRepel = baseRepel * STATE.proximityCharge[pairKey];
                     f -= fRepel; 
                 } else {
@@ -903,6 +830,7 @@
                     STATE.proximityCharge[pairKey] = Math.max(0.0, STATE.proximityCharge[pairKey] - CONFIG.proximityDischargeRate * dt);
                 }
 
+                // Resolve force vector
                 const fx = (dx / dist) * f * dt;
                 const fy = (dy / dist) * f * dt;
 
@@ -912,12 +840,112 @@
                 b2.vy -= fy / b2.mass;
             };
 
-            calculatePairForce(0, 1);
-            calculatePairForce(0, 2);
-            calculatePairForce(1, 2);
+            // Calculate mutual interactions for all 3 pairing states
+            computeInteractiveForces(0, 1);
+            computeInteractiveForces(0, 2);
+            computeInteractiveForces(1, 2);
         }
 
-        // Main kinematic frame-loop
+        // =========================================================================
+        // 7. INTERACTIVE INPUT LISTENERS
+        // =========================================================================
+        
+        // Window Resize proportional scaling helper
+        window.addEventListener('resize', () => {
+            const lastWidth = width;
+            const lastHeight = height;
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+
+            bodies.forEach(b => {
+                b.x = (b.x / lastWidth) * width;
+                b.y = (b.y / lastHeight) * height;
+            });
+        });
+
+        // Unified pointer coordination (supports both mouse & mobile touch)
+        window.addEventListener('pointermove', (e) => {
+            STATE.mouse.x = e.clientX;
+            STATE.mouse.y = e.clientY;
+            STATE.mouse.active = true;
+        });
+
+        const disablePointer = () => { STATE.mouse.active = false; };
+        window.addEventListener('pointerleave', disablePointer);
+        window.addEventListener('pointercancel', disablePointer);
+
+        // Simulation Run/Pause Interactivity
+        UI.toggleSimBtn.addEventListener('click', () => {
+            STATE.isSimRunning = !STATE.isSimRunning;
+            if (STATE.isSimRunning) {
+                UI.toggleSimBtn.setAttribute('title', 'Pause Simulation');
+                UI.toggleSimBtn.classList.add('active-state');
+                UI.pauseSvg.style.display = 'block';
+                UI.playSvg.style.display = 'none';
+            } else {
+                UI.toggleSimBtn.setAttribute('title', 'Resume Simulation');
+                UI.toggleSimBtn.classList.remove('active-state');
+                UI.pauseSvg.style.display = 'none';
+                UI.playSvg.style.display = 'block';
+            }
+        });
+
+        // Dim & Slow-Mo Interactivity
+        UI.toggleDimBtn.addEventListener('click', () => {
+            STATE.isDimSlowMode = !STATE.isDimSlowMode;
+            if (STATE.isDimSlowMode) {
+                UI.toggleDimBtn.setAttribute('title', 'Toggle Standard Mode');
+                UI.toggleDimBtn.classList.add('active-state');
+                UI.sunSvg.style.display = 'none';
+                UI.moonSvg.style.display = 'block';
+                canvas.classList.add('blurred');
+            } else {
+                UI.toggleDimBtn.setAttribute('title', 'Toggle Dim & Slow Mode');
+                UI.toggleDimBtn.classList.remove('active-state');
+                UI.sunSvg.style.display = 'block';
+                UI.moonSvg.style.display = 'none';
+                canvas.classList.remove('blurred');
+            }
+        });
+
+        // Inverse Scroll Momentum
+        window.addEventListener('scroll', () => {
+            if (!STATE.isSimRunning) return;
+
+            const currentScrollY = window.scrollY;
+            const deltaY = currentScrollY - STATE.lastScrollY;
+            STATE.lastScrollY = currentScrollY;
+
+            const scrollDampen = STATE.isDimSlowMode ? 0.25 : 1.0;
+
+            bodies.forEach(b => {
+                b.vy -= deltaY * 0.03 * scrollDampen; // Restored matching G=375 speeds
+                b.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.015 * scrollDampen;
+            });
+
+            particles.forEach(p => {
+                p.vy -= deltaY * 0.02 * scrollDampen; // Restored matching G=375 speeds
+                p.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.01 * scrollDampen;
+            });
+        });
+
+        // =========================================================================
+        // 8. ENGINE RUNTIME INITIALIZATION
+        // =========================================================================
+        function initPhysics() {
+            const cx = width / 2;
+            const cy = height / 2;
+
+            // Stable resonant orbital velocities calibrated for G = 375
+            bodies = [
+                new Body(cx - 160, cy - 80, -0.15, 0.55, 2.5, '#ff3b30'), // Swiss Red
+                new Body(cx + 160, cy - 80, 0.15, -0.55, 2.5, '#ffffff'),  // Pure White
+                new Body(cx, cy + 140, 0.3, 0.05, 2.5, '#48484a')          // Muted Slate
+            ];
+
+            particles = Array.from({ length: CONFIG.numParticles }, () => new DustParticle());
+        }
+
         function animate() {
             ctx.clearRect(0, 0, width, height);
 
@@ -936,7 +964,7 @@
             requestAnimationFrame(animate);
         }
 
-        // Execution initiation
+        // Initialize and execute standard run-cycle
         initPhysics();
         animate();
     </script>
