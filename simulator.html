@@ -20,7 +20,7 @@
             
             /* Particle Colors */
             --p-electron: #00ffff;
-            --p-muon: #ff3b30; /* Aligned with Swiss Red */
+            --p-muon: #ff3b30; 
             --p-photon: #ffff00;
             --p-hadron: #00ff44;
         }
@@ -38,63 +38,12 @@
             color: var(--text-primary);
             font-family: var(--font-sans);
             line-height: 1.5;
-            overflow: hidden; /* Prevent scrolling so canvas is static */
-            user-select: none;
-        }
-
-        /* --- PHYSICS INTERACTIVE OVERLAY --- */
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 0;
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* --- FLOATING CONTROLS --- */
-        .sim-controls {
-            position: fixed;
-            top: 1.5rem;
-            right: 1.5rem;
-            z-index: 200;
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .sim-controls button {
-            background: rgba(8, 8, 10, 0.85);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            height: 2.25rem;
-            padding: 0 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            outline: none;
-            backdrop-filter: blur(4px);
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-
-        .sim-controls button:hover {
-            border-color: var(--swiss-red);
-            color: var(--swiss-red);
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         /* --- EDITORIAL SWISS LAYOUT --- */
         .wrapper {
-            position: relative;
-            z-index: 100;
             display: flex;
             flex-direction: column;
             border-left: 1px solid var(--border-color);
@@ -102,15 +51,8 @@
             border-bottom: 1px solid var(--border-color);
             max-width: 1400px;
             margin: 0 auto;
-            background: rgba(8, 8, 10, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            pointer-events: none; /* Lets clicks pass through to the canvas */
-        }
-
-        /* Make links and buttons inside wrapper clickable */
-        .wrapper a, .wrapper button {
-            pointer-events: auto; 
+            background: var(--bg-color);
+            min-height: 100vh;
         }
 
         header {
@@ -159,19 +101,89 @@
             font-size: 1rem;
         }
 
+        /* --- PHYSICS SIMULATION VIEWPORT --- */
+        .sim-container {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            min-height: 500px;
+            border-bottom: 1px solid var(--border-color);
+            background: #040406;
+            cursor: crosshair;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .floating-ui {
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+            pointer-events: none;
+        }
+
+        .event-readout {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--swiss-red);
+            font-weight: 700;
+            background: rgba(8, 8, 10, 0.85);
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(4px);
+        }
+
+        .click-instruction {
+            position: absolute;
+            bottom: 1.5rem;
+            width: 100%;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+            letter-spacing: 1px;
+        }
+
+        .btn-fire {
+            position: absolute;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: rgba(8, 8, 10, 0.85);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            height: 2.25rem;
+            padding: 0 1rem;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .btn-fire:hover {
+            border-color: var(--swiss-red);
+            color: var(--swiss-red);
+        }
+
+        /* --- GRID SECTIONS --- */
         .section-grid {
             display: flex;
             flex-direction: column;
+            border-bottom: 1px solid var(--border-color);
         }
 
         @media (min-width: 768px) {
             .section-grid { flex-direction: row; }
-            .header-title-box, .header-meta-box { padding: 3rem 2rem; }
         }
 
         .section-sidebar {
             flex: 1;
-            padding: 1.5rem 2rem;
+            padding: 2rem;
             border-bottom: 1px solid var(--border-color);
         }
 
@@ -201,11 +213,59 @@
 
         .section-content {
             flex: 3;
-            padding: 1.5rem 2rem;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* --- CONTROLS & LEGEND --- */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 400px;
+        }
+
+        .control-group label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .control-val {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        /* Swiss Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 8px;
+            background: var(--swiss-red);
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--border-color);
+        }
+
+        .legend-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 1.5rem;
-            align-items: center;
+            gap: 1rem;
         }
 
         .legend-item {
@@ -213,25 +273,27 @@
             align-items: center;
             font-family: var(--font-mono);
             font-size: 0.8rem;
-            color: var(--text-primary);
             gap: 0.5rem;
             background: rgba(255, 255, 255, 0.03);
             padding: 0.5rem 1rem;
             border: 1px solid var(--border-color);
         }
 
-        .color-box {
-            width: 10px; height: 10px;
-        }
+        .color-box { width: 10px; height: 10px; }
 
-        .event-readout {
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            color: var(--swiss-red);
-            font-weight: 700;
-            margin-top: 1rem;
-            min-height: 1.5rem;
+        /* --- TEXT STYLES --- */
+        .text-block h3 {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
         }
+        .text-block p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            max-width: 800px;
+        }
+        .text-block p:last-child { margin-bottom: 0; }
 
         a {
             color: var(--text-primary);
@@ -244,46 +306,17 @@
             background-color: var(--swiss-red);
             color: #fff;
         }
-
-        /* Instructions overlay */
-        .click-instruction {
-            position: absolute;
-            bottom: 2rem;
-            width: 100%;
-            text-align: center;
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            pointer-events: none;
-            z-index: 50;
-            letter-spacing: 1px;
-        }
-
     </style>
 </head>
 <body>
 
-    <!-- Sim Controls -->
-    <div class="sim-controls">
-        <button id="trigger-btn">[ FIRE BEAM ]</button>
-    </div>
-
-    <!-- Background Canvas Layer -->
-    <div id="canvas-container">
-        <canvas id="detector-canvas"></canvas>
-    </div>
-    
-    <div class="click-instruction">CLICK ANYWHERE TO GENERATE COLLISION</div>
-
-    <!-- UI Overlay matched to Portfolio -->
     <div class="wrapper">
         <header>
             <div class="header-title-box">
                 <h1>High-Energy<br>Collision Sim<span class="accent-bullet">.</span></h1>
                 <p class="intro-text">
-                    A kinematic simulation of Standard Model particles interacting with generalized detector geometry and a 3.8T axial magnetic field.
+                    A kinematic simulation of Standard Model particles interacting with generalized detector geometry in a uniform magnetic field.
                 </p>
-                <div id="event-display" class="event-readout">STATUS: AWAITING COLLISION...</div>
             </div>
             <div class="header-meta-box">
                 <div>
@@ -291,32 +324,66 @@
                     <div><a href="index.html">← RETURN TO MAIN PORTFOLIO</a></div>
                 </div>
                 <div>
-                    <div>B_FIELD: 3.8 TESLA</div>
-                    <div>COM_ENERGY: 13 TEV</div>
+                    <div>[ INTERACTIVE ENGINE ]</div>
+                    <div>SCROLL DOWN FOR PARAMETERS</div>
                 </div>
             </div>
         </header>
 
+        <!-- SIMULATION VIEWPORT -->
+        <div class="sim-container" id="sim-container">
+            <canvas id="detector-canvas"></canvas>
+            <div class="floating-ui">
+                <div id="event-display" class="event-readout">STATUS: AWAITING COLLISION...</div>
+            </div>
+            <div class="click-instruction">CLICK CANVAS TO GENERATE COLLISION</div>
+            <button id="trigger-btn" class="btn-fire">[ FIRE BEAM ]</button>
+        </div>
+
+        <!-- SECTION 01: PARAMETERS -->
         <section class="section-grid">
             <div class="section-sidebar">
-                <span class="section-num">01 // TRKS</span>
-                <h2 class="section-title">Detector Legend</h2>
+                <span class="section-num">01 // PARAMS</span>
+                <h2 class="section-title">Configuration</h2>
             </div>
             <div class="section-content">
-                <div class="legend-item">
-                    <div class="color-box" style="background: var(--p-electron);"></div> Electron (e±)
+                <div class="control-group">
+                    <label>MAGNETIC FIELD (Bz): <span class="control-val"><span id="val-b">3.8</span> TESLA</span></label>
+                    <input type="range" id="slider-b" min="0" max="8" step="0.2" value="3.8">
                 </div>
-                <div class="legend-item">
-                    <div class="color-box" style="background: var(--p-muon);"></div> Muon (μ±)
+                <div class="control-group">
+                    <label>CENTER OF MASS ENERGY: <span class="control-val"><span id="val-e">13.0</span> TeV</span></label>
+                    <input type="range" id="slider-e" min="1" max="20" step="0.5" value="13.0">
                 </div>
-                <div class="legend-item">
-                    <div class="color-box" style="background: var(--p-photon);"></div> Photon (γ)
+                
+                <div class="legend-row" style="margin-top: 1rem;">
+                    <div class="legend-item"><div class="color-box" style="background: var(--p-electron);"></div> Electron (e±)</div>
+                    <div class="legend-item"><div class="color-box" style="background: var(--p-muon);"></div> Muon (μ±)</div>
+                    <div class="legend-item"><div class="color-box" style="background: var(--p-photon);"></div> Photon (γ)</div>
+                    <div class="legend-item"><div class="color-box" style="background: var(--p-hadron);"></div> Hadron (π, K)</div>
+                    <div class="legend-item"><div class="color-box" style="border: 1px dashed #555;"></div> Neutrino (ν)</div>
                 </div>
-                <div class="legend-item">
-                    <div class="color-box" style="background: var(--p-hadron);"></div> Hadron (π, K)
+            </div>
+        </section>
+
+        <!-- SECTION 02: THEORY & KINEMATICS -->
+        <section class="section-grid">
+            <div class="section-sidebar">
+                <span class="section-num">02 // THEORY</span>
+                <h2 class="section-title">How It Works</h2>
+            </div>
+            <div class="section-content">
+                <div class="text-block">
+                    <h3>Lorentz Force & Magnetic Fields</h3>
+                    <p>Inside the tracker, a uniform axial magnetic field curves the trajectory of charged particles according to the Lorentz force equation: <strong>F = q(v × B)</strong>. By measuring the radius of curvature, we can determine the particle's momentum. Neutral particles (Photons, Neutrinos) do not possess an electric charge and therefore travel in perfectly straight lines. Try adjusting the Magnetic Field slider to see how curvature reacts.</p>
                 </div>
-                <div class="legend-item">
-                    <div class="color-box" style="border: 1px dashed #555; background: transparent;"></div> Neutrino (ν)
+                <div class="text-block">
+                    <h3>Calorimetry & Stopping Power</h3>
+                    <p>Detectors use dense materials to force particles to deposit their energy and stop. Electrons and Photons shower in the inner <strong>Electromagnetic Calorimeter (ECAL)</strong>. Hadrons (protons, pions) are heavier and penetrate further, stopping in the <strong>Hadron Calorimeter (HCAL)</strong>. Muons are unique—they are "minimum-ionizing" and pass through almost all matter, reaching the outermost Muon Spectrometer.</p>
+                </div>
+                <div class="text-block">
+                    <h3>Quantum Decay Channels</h3>
+                    <p>When you fire the beam, the simulation probabilistically resolves different Standard Model events. Most often, quarks and gluons scatter into chaotic "jets" of hadrons. Occasionally, you will simulate a rare resonance decay, such as a Higgs Boson decaying into two high-energy photons (H → γγ), or a Z Boson decaying into two muons (Z → μ+ μ-).</p>
                 </div>
             </div>
         </section>
@@ -324,23 +391,32 @@
 
 <!-- Physics Engine Script -->
 <script>
+    const container = document.getElementById('sim-container');
     const canvas = document.getElementById('detector-canvas');
     const ctx = canvas.getContext('2d');
+    
+    // UI Elements
     const eventDisplay = document.getElementById('event-display');
     const triggerBtn = document.getElementById('trigger-btn');
+    const sliderB = document.getElementById('slider-b');
+    const sliderE = document.getElementById('slider-e');
+    const valB = document.getElementById('val-b');
+    const valE = document.getElementById('val-e');
 
+    // State Variables
     let cx, cy;
     let particles = [];
     let explosions = [];
     
-    // Magnetic field strength
-    const B = 0.015; 
+    // Config values driven by sliders
+    let configB = parseFloat(sliderB.value);
+    let configE = parseFloat(sliderE.value);
+    
+    // Magnetic force scalar (Mapping Tesla to canvas pixels/frame)
+    const TESLA_TO_CANVAS = 0.003947; 
 
-    // Detector boundaries (radii in pixels)
-    const R_TRACKER = 180;
-    const R_ECAL = 250;
-    const R_HCAL = 350;
-    const R_MUON = 550;
+    // Dynamic Detector Boundaries (radii)
+    let R_TRACKER, R_ECAL, R_HCAL, R_MUON;
 
     // Grab CSS variables for seamless color matching
     const style = getComputedStyle(document.body);
@@ -350,34 +426,60 @@
     const C_HADR = style.getPropertyValue('--p-hadron').trim();
     const C_BORDER = style.getPropertyValue('--border-color').trim();
 
+    // Standard Model Particle Dictionary
+    const SM_PARTICLES = {
+        ELECTRON: { mass: 0.5, charge: -1, color: C_ELEC },
+        POSITRON: { mass: 0.5, charge: 1,  color: C_ELEC },
+        MUON_MINUS: { mass: 10, charge: -1, color: C_MUON },
+        MUON_PLUS:  { mass: 10, charge: 1,  color: C_MUON },
+        PHOTON:   { mass: 0.01, charge: 0,  color: C_PHOT },
+        HADRON_PLUS: { mass: 5, charge: 1, color: C_HADR },
+        HADRON_MINUS:{ mass: 5, charge:-1, color: C_HADR },
+        HADRON_NEUT: { mass: 5, charge: 0, color: '#00cc33' },
+        NEUTRINO:    { mass: 0.01, charge:0, color: 'rgba(255,255,255,0.2)', dashed: true }
+    };
+
+    function getStoppingRadius(type) {
+        if(type === SM_PARTICLES.ELECTRON || type === SM_PARTICLES.POSITRON || type === SM_PARTICLES.PHOTON) return R_ECAL;
+        if(type === SM_PARTICLES.HADRON_PLUS || type === SM_PARTICLES.HADRON_MINUS || type === SM_PARTICLES.HADRON_NEUT) return R_HCAL;
+        if(type === SM_PARTICLES.MUON_MINUS || type === SM_PARTICLES.MUON_PLUS) return R_MUON + 500;
+        return 9999; // Neutrino escapes
+    }
+
     function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // Match canvas to its CSS container size
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
         cx = canvas.width / 2;
-        // Shift center slightly down to account for top UI
-        cy = (canvas.height / 2) + 80; 
+        cy = canvas.height / 2;
+
+        // Dynamically scale detector so it always fits on screen perfectly
+        let maxR = Math.min(cx, cy) * 0.95; 
+        R_MUON = maxR;
+        R_HCAL = maxR * 0.65;
+        R_ECAL = maxR * 0.45;
+        R_TRACKER = maxR * 0.32;
     }
     window.addEventListener('resize', resize);
     resize();
 
-    // Standard Model Particle Dictionary
-    const SM_PARTICLES = {
-        ELECTRON: { mass: 0.5, charge: -1, color: C_ELEC, stopsAt: R_ECAL },
-        POSITRON: { mass: 0.5, charge: 1,  color: C_ELEC, stopsAt: R_ECAL },
-        MUON_MINUS: { mass: 10, charge: -1, color: C_MUON, stopsAt: R_MUON + 500 },
-        MUON_PLUS:  { mass: 10, charge: 1,  color: C_MUON, stopsAt: R_MUON + 500 },
-        PHOTON:   { mass: 0.01, charge: 0,  color: C_PHOT, stopsAt: R_ECAL },
-        HADRON_PLUS: { mass: 5, charge: 1, color: C_HADR, stopsAt: R_HCAL },
-        HADRON_MINUS:{ mass: 5, charge:-1, color: C_HADR, stopsAt: R_HCAL },
-        HADRON_NEUT: { mass: 5, charge: 0, color: '#00cc33', stopsAt: R_HCAL },
-        NEUTRINO:    { mass: 0.01, charge:0, color: 'rgba(255,255,255,0.2)', stopsAt: 9999, dashed: true }
-    };
+    // Input Listeners
+    sliderB.addEventListener('input', (e) => {
+        configB = parseFloat(e.target.value);
+        valB.innerText = configB.toFixed(1);
+    });
+    
+    sliderE.addEventListener('input', (e) => {
+        configE = parseFloat(e.target.value);
+        valE.innerText = configE.toFixed(1);
+    });
 
     class Particle {
         constructor(x, y, px, py, type) {
             this.x = x; this.y = y;
             this.vx = px; this.vy = py;
             this.type = type;
+            this.stopsAt = getStoppingRadius(this.type);
             this.history = [{x, y}];
             this.active = true;
         }
@@ -385,9 +487,10 @@
         update() {
             if (!this.active) return;
 
-            // Lorentz Force
-            let ax = (this.type.charge * this.vy * B) / this.type.mass;
-            let ay = (-this.type.charge * this.vx * B) / this.type.mass;
+            // Apply Lorentz Force (F = qvB)
+            let actualB = configB * TESLA_TO_CANVAS;
+            let ax = (this.type.charge * this.vy * actualB) / this.type.mass;
+            let ay = (-this.type.charge * this.vx * actualB) / this.type.mass;
 
             this.vx += ax;
             this.vy += ay;
@@ -396,15 +499,15 @@
 
             this.history.push({x: this.x, y: this.y});
 
-            // Boundary checks
+            // Boundary Calorimeter Checks
             const distSq = (this.x - cx)**2 + (this.y - cy)**2;
-            if (distSq >= this.type.stopsAt**2) {
+            if (distSq >= this.stopsAt**2) {
                 this.active = false;
-                if (this.type.stopsAt <= R_HCAL) {
+                if (this.stopsAt <= R_HCAL) {
                     explosions.push({
                         x: this.x, y: this.y, 
                         color: this.type.color, 
-                        radius: Math.random() * 6 + 3,
+                        radius: Math.random() * 6 + (configE * 0.3), // Energy scales splash size
                         life: 1.0
                     });
                 }
@@ -469,35 +572,37 @@
     }
 
     function generateCollision(e) {
-        // Prevent triggering if clicking a link or a button
-        if(e && (e.target.tagName === 'A' || e.target.tagName === 'BUTTON')) return;
+        if(e && (e.target.tagName === 'A' || e.target.tagName === 'INPUT')) return;
 
         particles = [];
         explosions = [];
-        explosions.push({x: cx, y: cy, color: '#ffffff', radius: 40, life: 1.0});
+        explosions.push({x: cx, y: cy, color: '#ffffff', radius: 40 * (configE/13), life: 1.0});
 
         const r = Math.random();
         let eventName = "QCD MULTIJET PRODUCTION";
-        let numHadrons = Math.floor(Math.random() * 25) + 15;
-        let numPhotons = Math.floor(Math.random() * 8);
+        
+        // Multiplicity scaled by collision energy slider
+        let eScale = configE / 13.0; 
+        let numHadrons = Math.floor((Math.random() * 25 + 15) * Math.sqrt(eScale));
+        let numPhotons = Math.floor(Math.random() * 8 * eScale);
         let specialParticles = [];
 
         if (r < 0.15) {
             eventName = "HIGGS BOSON DECAY: H → γγ";
             let angle = Math.random() * Math.PI * 2;
-            let p = 9; 
+            let p = 9 * eScale; 
             specialParticles.push(new Particle(cx, cy, Math.cos(angle)*p, Math.sin(angle)*p, SM_PARTICLES.PHOTON));
             specialParticles.push(new Particle(cx, cy, -Math.cos(angle)*p, -Math.sin(angle)*p, SM_PARTICLES.PHOTON));
         } else if (r < 0.35) {
             eventName = "Z BOSON DECAY: Z → μ+ μ-";
             let angle = Math.random() * Math.PI * 2;
-            let p = 7; 
+            let p = 7 * eScale; 
             specialParticles.push(new Particle(cx, cy, Math.cos(angle)*p, Math.sin(angle)*p, SM_PARTICLES.MUON_PLUS));
             specialParticles.push(new Particle(cx, cy, -Math.cos(angle)*p, -Math.sin(angle)*p, SM_PARTICLES.MUON_MINUS));
         } else if (r < 0.5) {
             eventName = "W BOSON DECAY: W- → e- + ν";
             let angle = Math.random() * Math.PI * 2;
-            let p = 6; 
+            let p = 6 * eScale; 
             specialParticles.push(new Particle(cx, cy, Math.cos(angle)*p, Math.sin(angle)*p, SM_PARTICLES.ELECTRON));
             specialParticles.push(new Particle(cx, cy, -Math.cos(angle)*p, -Math.sin(angle)*p, SM_PARTICLES.NEUTRINO));
         }
@@ -510,7 +615,7 @@
         for (let i = 0; i < numHadrons; i++) {
             let axis = jetAxes[Math.floor(Math.random() * jetAxes.length)];
             let angle = axis + (Math.random() - 0.5) * 1.5; 
-            let p = Math.random() * 3.5 + 1;
+            let p = (Math.random() * 3.5 + 1) * eScale;
             
             let typeProb = Math.random();
             let type = SM_PARTICLES.HADRON_PLUS;
@@ -521,7 +626,7 @@
 
         for(let i=0; i<numPhotons; i++) {
             let angle = Math.random() * Math.PI * 2;
-            let p = Math.random() * 4 + 1;
+            let p = (Math.random() * 4 + 1) * eScale;
             particles.push(new Particle(cx, cy, Math.cos(angle)*p, Math.sin(angle)*p, SM_PARTICLES.PHOTON));
         }
     }
@@ -542,8 +647,7 @@
     }
 
     function animate() {
-        // Creates the fading motion blur trail effect
-        ctx.fillStyle = 'rgba(8, 8, 10, 0.4)';
+        ctx.fillStyle = 'rgba(4, 4, 6, 0.4)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         drawDetector();
@@ -558,11 +662,11 @@
     }
 
     // Input bindings
-    window.addEventListener('click', generateCollision);
+    container.addEventListener('click', generateCollision);
     triggerBtn.addEventListener('click', generateCollision);
 
     // Initial Trigger
-    setTimeout(() => generateCollision(null), 800);
+    setTimeout(() => generateCollision(null), 600);
     animate();
 
 </script>
