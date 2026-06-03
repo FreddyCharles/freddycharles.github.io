@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Freddy Charles | Mechanical Engineering & Simulation</title>
-    <!-- Importing clean monospace and sans-serif fonts for an engineering design feel -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>FREDDY CHARLES // MEng MECHANICAL ENGINEERING</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-dark: #06080c;
-            --panel-bg: rgba(10, 15, 26, 0.75);
-            --panel-border: rgba(56, 189, 248, 0.15);
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --accent-cyan: #38bdf8;
-            --font-sans: 'Plus Jakarta Sans', sans-serif;
+            --bg-color: #08080a;
+            --text-primary: #ffffff;
+            --text-secondary: #8e8e93;
+            --swiss-red: #ff3b30;
+            --border-color: #242426;
+            --font-sans: 'Inter', -apple-system, sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
         }
 
@@ -23,17 +22,18 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            border-radius: 0 !important; /* Enforce hard Swiss edges */
         }
 
         body {
-            background-color: var(--bg-dark);
+            background-color: var(--bg-color);
             color: var(--text-primary);
             font-family: var(--font-sans);
-            line-height: 1.6;
+            line-height: 1.5;
             overflow-x: hidden;
         }
 
-        /* Ambient background canvas for the Boids flocking simulation */
+        /* Ambient background canvas for the 3-Body Problem simulation */
         #canvas-container {
             position: fixed;
             top: 0;
@@ -41,7 +41,7 @@
             width: 100vw;
             height: 100vh;
             z-index: -1;
-            pointer-events: all;
+            pointer-events: none;
         }
 
         canvas {
@@ -50,1154 +50,711 @@
             height: 100%;
         }
 
-        /* Main Container layout */
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Glassmorphism panel styling */
-        .glass-panel {
-            background: var(--panel-bg);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border: 1px solid var(--panel-border);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-        }
-
-        /* Sticky Controller with Flexbox Layout */
-        .sim-controller {
-            position: sticky;
-            top: 1rem;
-            z-index: 100;
+        /* Modern Swiss Grid Layout */
+        .wrapper {
             display: flex;
             flex-direction: column;
-            gap: 1.2rem;
-            background: rgba(6, 8, 12, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 1.2rem 1.5rem;
-            border: 1px solid var(--panel-border);
-            border-radius: 12px;
-            margin-bottom: 3rem;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
+            min-height: 100vh;
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(8, 8, 10, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
-        /* Header Row: Title on Left, Tabs on Right */
-        .sim-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-            border-bottom: 1px solid rgba(56, 189, 248, 0.1);
-            padding-bottom: 0.8rem;
-        }
-
-        .sim-title {
-            color: var(--accent-cyan);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Tabs Flexbox Container */
-        .sim-tabs {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--panel-border);
-            color: var(--text-secondary);
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            padding: 0.4rem 0.9rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .tab-btn.active, .tab-btn:hover {
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-            background: rgba(56, 189, 248, 0.1);
-        }
-
-        /* Slider Controls Flexbox Wrappers */
-        .sim-controls-wrapper {
-            display: flex;
-            width: 100%;
-        }
-
-        .sim-control-group {
-            display: none; /* Controlled dynamically by active state */
-            flex-wrap: wrap;
-            gap: 1.5rem;
-            align-items: center;
-            width: 100%;
-        }
-
-        .sim-control-group.active {
-            display: flex;
-        }
-
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .control-group label {
-            color: var(--text-secondary);
-        }
-
-        .control-group input[type="range"] {
-            accent-color: var(--accent-cyan);
-            background: #1e293b;
-            height: 4px;
-            border-radius: 2px;
-            outline: none;
-            width: 70px;
-        }
-
-        .control-group input[type="checkbox"] {
-            accent-color: var(--accent-cyan);
-            cursor: pointer;
-        }
-
-        /* Header / Hero */
+        /* Top Header Row */
         header {
-            text-align: left;
-            padding: 4rem 0 2rem 0;
-            border-bottom: 1px solid var(--panel-border);
-            margin-bottom: 3rem;
-        }
-
-        .meta-stamp {
-            font-family: var(--font-mono);
-            color: var(--accent-cyan);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 700;
-            letter-spacing: -1px;
-            line-height: 1.1;
-            margin-bottom: 1rem;
-        }
-
-        .subtitle {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            font-weight: 300;
-            max-width: 600px;
-        }
-
-        /* Grid System for Resume Info */
-        .layout-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 2rem;
-        }
-
-        @media (min-width: 768px) {
-            .layout-grid {
-                grid-template-columns: 2.5fr 1.5fr;
-            }
-        }
-
-        /* Section Typography */
-        h2 {
-            font-family: var(--font-mono);
-            font-size: 1.1rem;
-            color: var(--accent-cyan);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 1.5rem;
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        h2::before {
-            content: "//";
-            color: var(--text-secondary);
+        .header-title-box {
+            flex: 2;
+            min-width: 300px;
+            padding: 4rem 2rem;
+            border-right: 1px solid var(--border-color);
         }
 
-        h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .date-location {
+        .header-meta-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 4rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             font-family: var(--font-mono);
             font-size: 0.85rem;
             color: var(--text-secondary);
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
         }
 
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.8rem);
+            font-weight: 800;
+            line-height: 1.0;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            color: var(--text-primary);
+        }
+
+        .accent-bullet {
+            color: var(--swiss-red);
+            font-weight: 800;
+        }
+
+        /* Abstract Section Layout */
+        .section-grid {
+            display: flex;
+            flex-direction: column;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        @media (min-width: 768px) {
+            .section-grid {
+                flex-direction: row;
+            }
+        }
+
+        /* Sidebar label index */
+        .section-sidebar {
+            flex: 1;
+            padding: 3rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            border-right: none;
+        }
+
+        @media (min-width: 768px) {
+            .section-sidebar {
+                border-right: 1px solid var(--border-color);
+                border-bottom: none;
+                max-width: 300px;
+            }
+        }
+
+        .section-num {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            color: var(--swiss-red);
+            font-weight: 700;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            line-height: 1.1;
+        }
+
+        /* Main Content Segment inside columns */
+        .section-content {
+            flex: 3;
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+        }
+
+        /* Card blocks in absolute flat structure */
+        .item-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 2rem;
+        }
+
+        .item-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        @media (min-width: 600px) {
+            .item-row {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-start;
+            }
+        }
+
+        .item-meta {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            min-width: 180px;
+            margin-bottom: 0.5rem;
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-heading {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+
+        .item-subheading {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--swiss-red);
+            margin-bottom: 1rem;
+        }
+
+        /* Bullet details */
         .details-list {
             list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
         .details-list li {
             position: relative;
             padding-left: 1.25rem;
-            margin-bottom: 0.75rem;
-            color: var(--text-secondary);
             font-size: 0.95rem;
+            color: var(--text-secondary);
         }
 
         .details-list li::before {
-            content: "→";
+            content: "■";
             position: absolute;
             left: 0;
-            color: var(--accent-cyan);
+            top: 0.2rem;
+            font-size: 0.6rem;
+            color: var(--swiss-red);
         }
 
-        /* Skill Badges */
-        .skills-container {
+        /* Flexbox skills grid */
+        .skills-flex {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
         }
 
-        .skill-badge {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            color: var(--text-primary);
+        .skill-tag {
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
             font-family: var(--font-mono);
             font-size: 0.8rem;
-            padding: 0.4rem 0.8rem;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
-
-        .skill-badge:hover {
-            border-color: var(--accent-cyan);
-            background: rgba(56, 189, 248, 0.1);
-        }
-
-        /* Contact Details */
-        .contact-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-        }
-
-        .contact-item a {
+            background: rgba(255, 255, 255, 0.02);
             color: var(--text-primary);
-            text-decoration: none;
-            transition: color 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
-        .contact-item a:hover {
-            color: var(--accent-cyan);
-        }
-
+        /* Footer system info */
         footer {
-            text-align: center;
-            padding: 4rem 0;
+            border-top: 1px solid var(--border-color);
+            padding: 3rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
             font-family: var(--font-mono);
             font-size: 0.8rem;
             color: var(--text-secondary);
-            border-top: 1px solid var(--panel-border);
+            gap: 1.5rem;
+        }
+
+        a {
+            color: var(--text-primary);
+            text-decoration: none;
+            border-bottom: 1px solid var(--swiss-red);
+            transition: all 0.2s;
+        }
+
+        a:hover {
+            background-color: var(--swiss-red);
+            color: #fff;
         }
     </style>
 </head>
 <body>
 
-    <!-- Generative Canvas Base -->
+    <!-- 3-Body Problem Gravitational Canvas Background -->
     <div id="canvas-container">
-        <canvas id="generative-canvas"></canvas>
+        <canvas id="three-body-canvas"></canvas>
     </div>
 
-    <!-- Active Simulations Hub (Built with Flexbox) -->
-    <div class="sim-controller">
-        <div class="sim-header-row">
-            <div class="sim-title">Engine Hub</div>
-            <div class="sim-tabs">
-                <button class="tab-btn active" data-sim="boids">Boids Kinematics</button>
-                <button class="tab-btn" data-sim="fluid">Fluid Flow Field</button>
-                <button class="tab-btn" data-sim="gravity">CERN Gravity</button>
-            </div>
-        </div>
-
-        <div class="sim-controls-wrapper">
-            <!-- Controls for Boids Simulation -->
-            <div class="sim-control-group active" id="boids-controls">
-                <div class="control-group">
-                    <label for="cohesion-weight">Cohesion</label>
-                    <input type="range" id="cohesion-weight" min="0.1" max="3" step="0.1" value="1.0">
-                </div>
-                <div class="control-group">
-                    <label for="alignment-weight">Alignment</label>
-                    <input type="range" id="alignment-weight" min="0.1" max="3" step="0.1" value="1.0">
-                </div>
-                <div class="control-group">
-                    <label for="separation-weight">Separation</label>
-                    <input type="range" id="separation-weight" min="0.1" max="3" step="0.1" value="1.5">
-                </div>
-                <div class="control-group">
-                    <label for="boid-count">Agents</label>
-                    <input type="range" id="boid-count" min="40" max="250" step="10" value="120">
-                </div>
-            </div>
-
-            <!-- Controls for Fluid Flow Field -->
-            <div class="sim-control-group" id="fluid-controls">
-                <div class="control-group">
-                    <label for="flow-speed">Velocity</label>
-                    <input type="range" id="flow-speed" min="0.1" max="2.5" step="0.1" value="0.7">
-                </div>
-                <div class="control-group">
-                    <label for="fluid-count">Density</label>
-                    <input type="range" id="fluid-count" min="50" max="400" step="10" value="180">
-                </div>
-                <div class="control-group">
-                    <input type="checkbox" id="show-vectors" checked>
-                    <label for="show-vectors">Vector Grid</label>
-                </div>
-            </div>
-
-            <!-- Controls for CERN Gravity System -->
-            <div class="sim-control-group" id="gravity-controls">
-                <div class="control-group">
-                    <label for="gravity-strength">Pull Force</label>
-                    <input type="range" id="gravity-strength" min="0.1" max="3" step="0.1" value="1.2">
-                </div>
-                <div class="control-group">
-                    <label for="particle-count">Quantum Flux</label>
-                    <input type="range" id="particle-count" min="50" max="300" step="10" value="150">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="container">
-        <!-- Header -->
+    <div class="wrapper">
+        <!-- Top Editorial Block -->
         <header>
-            <span class="meta-stamp">System Variable: Freddy Charles</span>
-            <h1>Freddy Charles</h1>
-            <p class="subtitle">Mechanical Engineering MEng Student at the University of Sheffield. Specializing in multiphysics simulations, design optimization, and data structures.</p>
+            <div class="header-title-box">
+                <h1>Freddy<br>Charles<span class="accent-bullet">.</span></h1>
+                <p style="margin-top: 1.5rem; color: var(--text-secondary); max-width: 500px; font-size: 1.1rem;">
+                    MEng Mechanical Engineering Student at the University of Sheffield. Specialized in multiphysics simulations, mechanical design, and dynamic system modeling.
+                </p>
+            </div>
+            <div class="header-meta-box">
+                <div>
+                    <div style="color: var(--swiss-red); font-weight: 700; margin-bottom: 0.5rem;">[ CONTACT MATRIX ]</div>
+                    <div>T: +44-7462794717</div>
+                    <div>E: <a href="mailto:freddycharles04@gmail.com">freddycharles04@gmail.com</a></div>
+                    <div>E: <a href="mailto:fltcharles1@sheffield.ac.uk">fltcharles1@sheffield.ac.uk</a></div>
+                </div>
+                <div>
+                    <div>REGISTRATION: 220160845</div>
+                    <div>LINKEDIN: <a href="https://linkedin.com/in/Freddy-Charles" target="_blank">FREDDY CHARLES</a></div>
+                </div>
+            </div>
         </header>
 
-        <!-- Main Layout Grid -->
-        <div class="layout-grid">
-            
-            <!-- Left Column: Experience and Projects -->
-            <div class="main-column">
+        <!-- SECTION 01: QUALIFICATIONS (First Focus) -->
+        <section class="section-grid">
+            <div class="section-sidebar">
+                <span class="section-num">01 // EDU</span>
+                <h2 class="section-title">Qualifications</h2>
+            </div>
+            <div class="section-content">
                 
-                <!-- Experience Section -->
-                <section class="glass-panel">
-                    <h2>Professional Experience</h2>
-                    
-                    <div style="margin-bottom: 2rem;">
-                        <h3>Multiphysics Simulations Engineer</h3>
-                        <p style="color: var(--accent-cyan); font-weight: 500;">Trivista Engineering Ltd.</p>
-                        <div class="date-location">
-                            <span>Summer 2025</span>
-                            <span>Brighton and Hove</span>
-                        </div>
+                <div class="item-row">
+                    <div class="item-meta">2022 — 2026</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Mechanical Engineering MEng</h3>
+                        <p class="item-subheading">University of Sheffield</p>
                         <ul class="details-list">
-                            <li>Contributed to structural and thermofluid engineering projects across multiple industry sectors.</li>
-                            <li>Performed structural analysis on complex macerator turbine components.</li>
-                            <li>Conducted seismic load analysis on large-scale industrial bitumen tanks.</li>
-                            <li>Executed a parametric design study for an automotive AC system to optimize thermal performance.</li>
-                            <li>Developed a porous media simulation for a catalytic converter and completed comprehensive fluid flow analysis of exhaust headers.</li>
+                            <li>First Year Performance: 1st Class Honours equivalent</li>
+                            <li>Second Year Performance: 2:1 Class Honours equivalent</li>
+                            <li>Third Year Performance: 1st Class Honours equivalent</li>
                         </ul>
                     </div>
+                </div>
 
-                    <div style="margin-bottom: 2rem;">
-                        <h3>Workshop & Operations Team</h3>
-                        <p style="color: var(--accent-cyan); font-weight: 500;">Beryl Bikes</p>
-                        <div class="date-location">
-                            <span>June 2024 - September 2025</span>
-                            <span>Brighton and Hove</span>
-                        </div>
+                <div class="item-row">
+                    <div class="item-meta">2020 — 2022</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">A-Levels & AS-Levels</h3>
+                        <p class="item-subheading">BHASVIC (Brighton Hove and Sussex Sixth Form College)</p>
                         <ul class="details-list">
-                            <li>Served as a mobile bicycle mechanic, managing battery replacements and routine diagnostics across the Brighton & Hove rental fleet.</li>
-                            <li>Completed full mechanical overhauls and comprehensive servicing on retrieved bikes in the central workshop.</li>
+                            <li>Mathematics, Physics, Chemistry (A-Level Core)</li>
+                            <li>Further Mathematics (AS-Level)</li>
+                            <li>Results Profile: A* A* A* B</li>
                         </ul>
                     </div>
+                </div>
 
-                    <div>
-                        <h3>Bicycle Mechanic</h3>
-                        <p style="color: var(--accent-cyan); font-weight: 500;">South Coast Bikes</p>
-                        <div class="date-location">
-                            <span>May 2020 - June 2022</span>
-                            <span>Brighton and Hove</span>
-                        </div>
+                <div class="item-row">
+                    <div class="item-meta">2015 — 2020</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">GCSE Secondary Education</h3>
+                        <p class="item-subheading">Cardinal Newman Catholic School</p>
                         <ul class="details-list">
-                            <li>Executed precise 33-step safety and tune-up services.</li>
-                            <li>Diagnosed component failures, replaced worn systems, and delivered fine-tuned mechanical performance.</li>
+                            <li>11 GCSE Qualifications including Design & Technology, Geography, French, and Music</li>
+                            <li>Results Profile (Grades 9-5): 9, 9, 8, 8, 8, 8, 7, 7, 7, 6, 5, 5</li>
                         </ul>
                     </div>
-                </section>
-
-                <!-- Academic Projects Section -->
-                <section class="glass-panel">
-                    <h2>Academic & Technical Projects</h2>
-                    
-                    <div style="margin-bottom: 2rem;">
-                        <h3>Final Year Project: Material Deformation & Mechanics</h3>
-                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">University of Sheffield</p>
-                        <div class="date-location">
-                            <span>Sept 2025 – July 2026</span>
-                        </div>
-                        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 0.5rem;">
-                            <em>Investigation of Deformation History, Microstructure, and Chip Formation Mechanics in Hot-Forged Ti-6Al-4V</em>
-                        </p>
-                        <ul class="details-list">
-                            <li>Developed an experimental plan to analyze material relationships during orthogonal cutting.</li>
-                            <li>Designed a physical testing procedure using a custom-engineered cutting rig integrated with high-speed imaging and structural force sensors.</li>
-                            <li>Captured and processed chip morphology and deformation zones to build highly predictive machining models for titanium alloys.</li>
-                        </ul>
-                    </div>
-
-                    <div style="margin-bottom: 2rem;">
-                        <h3>SLEDS (SheffSnow Logistics Equipment Distribution System)</h3>
-                        <div class="date-location">
-                            <span>Summer 2024</span>
-                        </div>
-                        <ul class="details-list">
-                            <li>Created a complete web-based equipment management tool for the University of Sheffield Snowsports Club.</li>
-                            <li>Programmed a robust database system utilizing <strong>SQL, Python, and Flask</strong> to handle inventory allocations and requests.</li>
-                            <li>Developed the frontend interface in <strong>HTML/CSS</strong>, significantly boosting the club's logistics efficiency.</li>
-                        </ul>
-                    </div>
-
-                    <div style="margin-bottom: 2rem;">
-                        <h3>Sheffield Student Downhill Design</h3>
-                        <div class="date-location">
-                            <span>Sept 2023 - Present</span>
-                        </div>
-                        <ul class="details-list">
-                            <li>Collaborated with the Frame Design Team in the structural design of a custom downhill mountain bike.</li>
-                            <li>Responsible for CAD modeling of structural linkages and geometry constraints in <strong>Fusion 360</strong>.</li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3>Particle Physics & Data Analysis Project</h3>
-                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">BHASVIC & University of Sussex</p>
-                        <div class="date-location">
-                            <span>Sept 2021 - March 2022</span>
-                        </div>
-                        <ul class="details-list">
-                            <li>Collaborated with PhD candidates analyzing real CERN ATLAS detector dataset metrics.</li>
-                            <li>Leveraged <strong>Python and Pandas</strong> to filter raw events and perform complex histogram data modeling, replicating steps from the Higgs Boson search.</li>
-                        </ul>
-                    </div>
-                </section>
+                </div>
 
             </div>
+        </section>
 
-            <!-- Right Column: Skills, Education, Leadership -->
-            <div class="sidebar-column">
-                
-                <!-- Contact Section -->
-                <section class="glass-panel">
-                    <h2>Connection Matrix</h2>
-                    <div class="contact-grid">
-                        <div class="contact-item">
-                            <a href="mailto:freddycharles04@gmail.com">
-                                <span>📧</span> freddycharles04@gmail.com
-                            </a>
-                        </div>
-                        <div class="contact-item">
-                            <a href="mailto:fltcharles1@sheffield.ac.uk">
-                                <span>📧</span> fltcharles1@sheffield.ac.uk
-                            </a>
-                        </div>
-                        <div class="contact-item">
-                            <a href="tel:+447462794717">
-                                <span>📞</span> +44 7462 794717
-                            </a>
-                        </div>
-                        <div class="contact-item">
-                            <a href="https://linkedin.com/in/Freddy-Charles" target="_blank">
-                                <span>🔗</span> LinkedIn: Freddy Charles
-                            </a>
-                        </div>
+        <!-- SECTION 02: EXPERIENCE (Second Focus) -->
+        <section class="section-grid">
+            <div class="section-sidebar">
+                <span class="section-num">02 // EXP</span>
+                <h2 class="section-title">Experience & Projects</h2>
+            </div>
+            <div class="section-content">
+
+                <!-- Professional Experience 1 -->
+                <div class="item-row">
+                    <div class="item-meta">SUMMER 2025<br>BRIGHTON & HOVE</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Multiphysics Simulations Engineer</h3>
+                        <p class="item-subheading">Trivista Engineering Ltd.</p>
+                        <ul class="details-list">
+                            <li>Executed structural analysis simulations on mechanical macerator turbine assemblies.</li>
+                            <li>Conducted seismic load calculations and modeling for heavy-duty bitumen tanks.</li>
+                            <li>Completed a thermal parametric design study for an automotive AC heat-exchange system.</li>
+                            <li>Developed a complex porous media fluid flow simulation for a catalytic converter assembly.</li>
+                            <li>Simulated fluid dynamics and exhaust flow velocity distribution across manifold headers.</li>
+                        </ul>
                     </div>
-                </section>
+                </div>
 
-                <!-- Software Skills -->
-                <section class="glass-panel">
-                    <h2>Technical Stack</h2>
-                    <div class="skills-container">
-                        <span class="skill-badge">MATLAB</span>
-                        <span class="skill-badge">Python</span>
-                        <span class="skill-badge">Ansys</span>
-                        <span class="skill-badge">Fusion 360</span>
-                        <span class="skill-badge">AutoCAD</span>
-                        <span class="skill-badge">LaTeX</span>
-                        <span class="skill-badge">SQL</span>
-                        <span class="skill-badge">Flask</span>
-                        <span class="skill-badge">HTML / CSS</span>
-                        <span class="skill-badge">JavaScript</span>
-                        <span class="skill-badge">Illustrator</span>
-                        <span class="skill-badge">Photoshop</span>
-                        <span class="skill-badge">Ableton Live 11</span>
+                <!-- Academic Experience 1 -->
+                <div class="item-row">
+                    <div class="item-meta">2025 — 2026<br>SHEFFIELD</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Final Year Research Project</h3>
+                        <p class="item-subheading">Investigation of Deformation History, Microstructure, and Chip Formation in Hot-Forged Ti-6Al-4V</p>
+                        <ul class="details-list">
+                            <li>Developed a detailed experimental plan and methodology to investigate material relationships during orthogonal cutting.</li>
+                            <li>Designed high-fidelity testing procedures utilizing a customized cutting rig with high-speed imaging arrays and structural force sensors.</li>
+                            <li>Captured and analyzed chip morphology and deformation zone evolution to construct highly predictive machining models for titanium alloys.</li>
+                        </ul>
                     </div>
-                </section>
+                </div>
 
-                <!-- Education Section -->
-                <section class="glass-panel">
-                    <h2>Education</h2>
-                    <div style="margin-bottom: 1.5rem;">
-                        <h4 style="font-size: 1rem; color: var(--text-primary);">University of Sheffield</h4>
-                        <p style="font-size: 0.85rem; font-family: var(--font-mono); color: var(--accent-cyan);">MEng Mechanical Engineering</p>
-                        <p style="font-size: 0.85rem; color: var(--text-secondary);">2022 - 2026</p>
-                        <p style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-secondary); margin-top: 0.25rem;">
-                            Year 1: 1st | Year 2: 2:1 | Year 3: 1st
-                        </p>
+                <!-- Academic Experience 2 -->
+                <div class="item-row">
+                    <div class="item-meta">SUMMER 2024<br>SOFTWARE ENGINE</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">SLEDS (Logistics Equipment Distribution System)</h3>
+                        <p class="item-subheading">Software Project // UoS Snowsports Club</p>
+                        <ul class="details-list">
+                            <li>Designed and developed a complete equipment distribution web engine to manage club rentals.</li>
+                            <li>Engineered a custom SQL backend linked with a Python Flask service architecture.</li>
+                            <li>Created the dynamic frontend web UI using structured HTML/CSS to coordinate real-time equipment booking workflows.</li>
+                        </ul>
                     </div>
+                </div>
 
-                    <div style="margin-bottom: 1.5rem;">
-                        <h4 style="font-size: 1rem; color: var(--text-primary);">BHASVIC Sixth Form</h4>
-                        <p style="font-size: 0.85rem; font-family: var(--font-mono); color: var(--text-secondary);">Maths, Further Maths (AS), Physics, Chemistry</p>
-                        <p style="font-size: 0.85rem; color: var(--text-secondary);">2020 - 2022</p>
-                        <p style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--accent-cyan); margin-top: 0.25rem;">
-                            Results: A*A*A*B
-                        </p>
+                <!-- Professional Experience 2 -->
+                <div class="item-row">
+                    <div class="item-meta">2024 — 2025<br>BRIGHTON & HOVE</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Workshop & Operations Technician</h3>
+                        <p class="item-subheading">Beryl Bikes</p>
+                        <ul class="details-list">
+                            <li>Worked as a mobile bicycle mechanic, replacing batteries and conducting safety checks in the field.</li>
+                            <li>Performed full mechanical overhauls, wheel-truing, and transmission services on retrieved units in the central workshop.</li>
+                        </ul>
                     </div>
+                </div>
 
-                    <div>
-                        <h4 style="font-size: 1rem; color: var(--text-primary);">Cardinal Newman School</h4>
-                        <p style="font-size: 0.85rem; color: var(--text-secondary);">2015 - 2020</p>
-                        <p style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-secondary); margin-top: 0.25rem;">
-                            11 GCSEs (Grades: 9-5)
-                        </p>
+                <!-- Academic Experience 3 -->
+                <div class="item-row">
+                    <div class="item-meta">2023 — PRESENT<br>SHEFFIELD</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Frame Design Engineer</h3>
+                        <p class="item-subheading">Sheffield Student Downhill Bike Project</p>
+                        <ul class="details-list">
+                            <li>Collaborated inside the Frame Team on structural link mechanisms and main frame layouts.</li>
+                            <li>Leveraged advanced geometric parametric solid modeling techniques inside Autodesk Fusion 360.</li>
+                        </ul>
                     </div>
-                </section>
+                </div>
 
-                <!-- Positions of Responsibility -->
-                <section class="glass-panel">
-                    <h2>Leadership</h2>
-                    <div>
-                        <h3>UoS Snowsports Club</h3>
-                        <p style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-cyan);">Design, Media, & Kit Secretary</p>
-                        <div class="date-location" style="margin-bottom: 0.5rem;">
-                            <span>June 2023 - Present</span>
-                        </div>
-                        <p style="font-size: 0.9rem; color: var(--text-secondary);">
-                            Nominated 3 times to executive roles. Managed design identity, digital assets/social channels, engineered partnerships, and oversaw the production of all custom apparel and ski gear.
-                        </p>
+                <!-- Academic Experience 4 -->
+                <div class="item-row">
+                    <div class="item-meta">2021 — 2022<br>SUSSEX</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Particle Physics & Data Analyst</h3>
+                        <p class="item-subheading">BHASVIC & University of Sussex Collaboration</p>
+                        <ul class="details-list">
+                            <li>Collaborated with CERN ATLAS researchers on educational and data outreach structures.</li>
+                            <li>Utilized Python and Pandas library frameworks to filter raw event files, replicating core histogram structures from Higgs Boson discoveries.</li>
+                        </ul>
                     </div>
-                </section>
+                </div>
 
-                <!-- Athletic Extracurriculars -->
-                <section class="glass-panel">
-                    <h2>Athletics</h2>
-                    <p style="font-size: 0.9rem; color: var(--text-secondary);">
-                        Active in competitive ski racing & freestyle, downhill mountain biking, handball, and climbing. Awarded the university's <strong>Black & Gold</strong> athletic merit prize. Helped the Brighton U16 Handball team place 2nd in the UK.
-                    </p>
-                </section>
+                <!-- Professional Experience 3 -->
+                <div class="item-row">
+                    <div class="item-meta">2020 — 2022<br>BRIGHTON & HOVE</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Bicycle Mechanic</h3>
+                        <p class="item-subheading">South Coast Bikes</p>
+                        <ul class="details-list">
+                            <li>Performed comprehensive 33-step overhaul services, diagnostics, and customized tuning builds.</li>
+                        </ul>
+                    </div>
+                </div>
 
             </div>
-            
-        </div>
+        </section>
+
+        <!-- SECTION 03: EXTRA QUALIFICATIONS (Third Focus) -->
+        <section class="section-grid">
+            <div class="section-sidebar">
+                <span class="section-num">03 // EXTRA</span>
+                <h2 class="section-title">Extra Qualifications</h2>
+            </div>
+            <div class="section-content">
+
+                <!-- Tech Skills -->
+                <div class="item-row">
+                    <div class="item-meta">COMPUTING & CAD</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Software Stack</h3>
+                        <p class="item-subheading">Technical simulation, modeling, design, and audio production frameworks</p>
+                        <div class="skills-flex">
+                            <span class="skill-tag">MATLAB</span>
+                            <span class="skill-badge skill-tag">Python (Pandas)</span>
+                            <span class="skill-tag">Ansys</span>
+                            <span class="skill-tag">Autodesk Fusion 360</span>
+                            <span class="skill-tag">AutoCAD</span>
+                            <span class="skill-tag">LaTeX</span>
+                            <span class="skill-tag">HTML5 / CSS3</span>
+                            <span class="skill-tag">JavaScript (ES6)</span>
+                            <span class="skill-tag">Adobe Illustrator</span>
+                            <span class="skill-tag">Photoshop</span>
+                            <span class="skill-tag">Ableton Live 11</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leadership -->
+                <div class="item-row">
+                    <div class="item-meta">LEADERSHIP</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Design, Media & Kit Secretary</h3>
+                        <p class="item-subheading">University of Sheffield Snowsports Club (2023 — Present)</p>
+                        <ul class="details-list">
+                            <li>Nominated three consecutive times by the club body to manage executive graphics, merchandise, and general logistics.</li>
+                            <li>Designed, sourced, and coordinated full production pipelines for custom technical ski jackets, hoodies, and club apparel.</li>
+                            <li>Engineered and maintained commercial relationships with key brand sponsors.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Athletics -->
+                <div class="item-row">
+                    <div class="item-meta">ATHLETICS</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Competitive Sports & Merits</h3>
+                        <p class="item-subheading">Ski Racing, Downhill Mountain Biking, and Handball</p>
+                        <ul class="details-list">
+                            <li>Represented the University of Sheffield in competitive structural ski race classes.</li>
+                            <li>Received the prestigious **Black and Gold** athletic merit award for significant contributions to university sports performance.</li>
+                            <li>Helped Brighton U16's Handball Team secure 2nd place overall in the UK national league (2019).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Certifications -->
+                <div class="item-row">
+                    <div class="item-meta">MISC</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">General Licensure</h3>
+                        <ul class="details-list">
+                            <li>Full UK Clean Driving License Holder</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Swiss Technical Footer -->
+        <footer>
+            <div>SYSTEM: STABLE 3-BODY CHAOTIC ENGINE</div>
+            <div>STARCH-WHITE / SWISS-RED COLOR SCHEME</div>
+            <div>DESIGNED & CODED BY FREDDY CHARLES &copy; 2026</div>
+        </footer>
     </div>
 
-    <footer>
-        <p>Boids artificial life simulation &copy; 2026 Freddy Charles. Powered by HTML5 Canvas vector logic.</p>
-    </footer>
-
-    <!-- Interactive Simulation Code -->
+    <!-- 3-Body Problem Physics Engine Script -->
     <script>
-        const canvas = document.getElementById('generative-canvas');
+        const canvas = document.getElementById('three-body-canvas');
         const ctx = canvas.getContext('2d');
 
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
 
-        let currentSim = 'boids'; // Active Engine Router Variable
-        let mouse = { x: -1000, y: -1000 };
-
-        window.addEventListener('mousemove', (e) => {
-            mouse.x = e.clientX;
-            mouse.y = e.clientY;
-        });
-
-        window.addEventListener('mouseleave', () => {
-            mouse.x = -1000;
-            mouse.y = -1000;
-        });
-
         window.addEventListener('resize', () => {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            initSim();
+            initPhysics();
         });
 
+        // 3-Body parameters
+        const G = 1500; // Gravitational constant (scaled for visual speed)
+        const springK = 0.00008; // Spring force pulling back to center to bound the chaos
+        const softening = 350; // Prevents division by zero/extreme slingshots
 
-        // ==========================================
-        // 1. BOIDS FLOCKING ENGINE DATA & LOGIC
-        // ==========================================
-        const cohesionSlider = document.getElementById('cohesion-weight');
-        const alignmentSlider = document.getElementById('alignment-weight');
-        const separationSlider = document.getElementById('separation-weight');
-        const boidCountSlider = document.getElementById('boid-count');
+        let bodies = [];
+        let particles = [];
+        const numParticles = 40; // Small cosmic dust particles orbiting chaotic gravity fields
 
-        let cohesionWeight = parseFloat(cohesionSlider.value);
-        let alignmentWeight = parseFloat(alignmentSlider.value);
-        let separationWeight = parseFloat(separationSlider.value);
-        let numBoids = parseInt(boidCountSlider.value);
-
-        const maxSpeed = 3.2;
-        const maxForce = 0.04;
-        const neighborRadius = 55;
-        const separationRadius = 24;
-        const cursorAvoidRadius = 140;
-        let boids = [];
-
-        class Boid {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                const angle = Math.random() * Math.PI * 2;
-                this.vx = Math.cos(angle) * maxSpeed;
-                this.vy = Math.sin(angle) * maxSpeed;
-                this.ax = 0;
-                this.ay = 0;
-                this.color = Math.random() > 0.4 ? '#38bdf8' : '#1e3a8a';
-                this.alpha = Math.random() * 0.35 + 0.2;
-                this.history = [];
-                this.historyLength = 7;
-            }
-
-            applyForce(fx, fy) {
-                this.ax += fx;
-                this.ay += fy;
-            }
-
-            flock() {
-                let sepX = 0, sepY = 0;
-                let aliX = 0, aliY = 0;
-                let cohX = 0, cohY = 0;
-                let sepCount = 0;
-                let neighborCount = 0;
-
-                for (let other of boids) {
-                    if (other === this) continue;
-                    const dx = other.x - this.x;
-                    const dy = other.y - this.y;
-                    const distSq = dx * dx + dy * dy;
-
-                    if (distSq < separationRadius * separationRadius && distSq > 0) {
-                        const d = Math.sqrt(distSq);
-                        sepX -= dx / d;
-                        sepY -= dy / d;
-                        sepCount++;
-                    }
-
-                    if (distSq < neighborRadius * neighborRadius) {
-                        aliX += other.vx;
-                        aliY += other.vy;
-                        cohX += other.x;
-                        cohY += other.y;
-                        neighborCount++;
-                    }
-                }
-
-                if (sepCount > 0) {
-                    sepX /= sepCount;
-                    sepY /= sepCount;
-                    const speed = Math.sqrt(sepX * sepX + sepY * sepY);
-                    if (speed > 0) {
-                        sepX = (sepX / speed) * maxSpeed - this.vx;
-                        sepY = (sepY / speed) * maxSpeed - this.vy;
-                        const force = Math.sqrt(sepX * sepX + sepY * sepY);
-                        if (force > maxForce) {
-                            sepX = (sepX / force) * maxForce;
-                            sepY = (sepY / force) * maxForce;
-                        }
-                    }
-                }
-
-                if (neighborCount > 0) {
-                    aliX /= neighborCount;
-                    aliY /= neighborCount;
-                    const aliSpeed = Math.sqrt(aliX * aliX + aliY * aliY);
-                    if (aliSpeed > 0) {
-                        aliX = (aliX / aliSpeed) * maxSpeed - this.vx;
-                        aliY = (aliY / aliSpeed) * maxSpeed - this.vy;
-                        const force = Math.sqrt(aliX * aliX + aliY * aliY);
-                        if (force > maxForce) {
-                            aliX = (aliX / force) * maxForce;
-                            aliY = (aliY / force) * maxForce;
-                        }
-                    }
-
-                    cohX /= neighborCount;
-                    cohY /= neighborCount;
-                    let targetX = cohX - this.x;
-                    let targetY = cohY - this.y;
-                    const targetSpeed = Math.sqrt(targetX * targetX + targetY * targetY);
-                    if (targetSpeed > 0) {
-                        targetX = (targetX / targetSpeed) * maxSpeed - this.vx;
-                        targetY = (targetY / targetSpeed) * maxSpeed - this.vy;
-                        const force = Math.sqrt(targetX * targetX + targetY * targetY);
-                        if (force > maxForce) {
-                            targetX = (targetX / force) * maxForce;
-                            targetY = (targetY / force) * maxForce;
-                        }
-                    }
-                    cohX = targetX;
-                    cohY = targetY;
-                }
-
-                this.applyForce(sepX * separationWeight, sepY * separationWeight);
-                this.applyForce(aliX * alignmentWeight, aliY * alignmentWeight);
-                this.applyForce(cohX * cohesionWeight, cohY * cohesionWeight);
-            }
-
-            avoidCursor() {
-                const dx = mouse.x - this.x;
-                const dy = mouse.y - this.y;
-                const distSq = dx * dx + dy * dy;
-
-                if (distSq < cursorAvoidRadius * cursorAvoidRadius && distSq > 0) {
-                    const d = Math.sqrt(distSq);
-                    let targetX = (-dx / d) * maxSpeed - this.vx;
-                    let targetY = (-dy / d) * maxSpeed - this.vy;
-                    const force = Math.sqrt(targetX * targetX + targetY * targetY);
-                    const maxPredatorForce = maxForce * 5.0;
-                    if (force > maxPredatorForce) {
-                        targetX = (targetX / force) * maxPredatorForce;
-                        targetY = (targetY / force) * maxPredatorForce;
-                    }
-                    this.applyForce(targetX, targetY);
-                }
-            }
-
-            update() {
-                this.vx += this.ax;
-                this.vy += this.ay;
-
-                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-                if (speed > maxSpeed) {
-                    this.vx = (this.vx / speed) * maxSpeed;
-                    this.vy = (this.vy / speed) * maxSpeed;
-                }
-
-                this.x += this.vx;
-                this.y += this.vy;
-                this.ax = 0;
-                this.ay = 0;
-
-                this.history.push({ x: this.x, y: this.y });
-                if (this.history.length > this.historyLength) {
-                    this.history.shift();
-                }
-
-                if (this.x < -10) this.x = width + 10;
-                if (this.x > width + 10) this.x = -10;
-                if (this.y < -10) this.y = height + 10;
-                if (this.y > height + 10) this.y = -10;
-            }
-
-            draw() {
-                if (this.history.length < 2) return;
-                ctx.beginPath();
-                ctx.moveTo(this.history[0].x, this.history[0].y);
-                for (let i = 1; i < this.history.length; i++) {
-                    ctx.lineTo(this.history[i].x, this.history[i].y);
-                }
-                ctx.strokeStyle = this.color;
-                ctx.globalAlpha = this.alpha;
-                ctx.lineWidth = 1.2;
-                ctx.stroke();
-
-                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-                if (speed > 0) {
-                    const angle = Math.atan2(this.vy, this.vx);
-                    ctx.save();
-                    ctx.translate(this.x, this.y);
-                    ctx.rotate(angle);
-                    ctx.beginPath();
-                    ctx.moveTo(4, 0);
-                    ctx.lineTo(-4, -2.5);
-                    ctx.lineTo(-2, 0);
-                    ctx.lineTo(-4, 2.5);
-                    ctx.closePath();
-                    ctx.fillStyle = this.color;
-                    ctx.globalAlpha = this.alpha + 0.25;
-                    ctx.fill();
-                    ctx.restore();
-                }
-                ctx.globalAlpha = 1.0;
-            }
-        }
-
-        function initBoids() {
-            boids = [];
-            for (let i = 0; i < numBoids; i++) {
-                boids.push(new Boid());
-            }
-        }
-
-
-        // ==========================================
-        // 2. FLUID FLOW FIELD ENGINE DATA & LOGIC
-        // ==========================================
-        const speedSlider = document.getElementById('flow-speed');
-        const fluidCountSlider = document.getElementById('fluid-count');
-        const vectorCheckbox = document.getElementById('show-vectors');
-
-        let flowSpeed = parseFloat(speedSlider.value);
-        let numFluidParticles = parseInt(fluidCountSlider.value);
-        let showVectors = vectorCheckbox.checked;
-        let fluidParticles = [];
-
-        function getForceField(x, y, time) {
-            let angle1 = Math.sin(x * 0.003 + time * 0.2) * Math.cos(y * 0.002 - time * 0.1) * Math.PI * 2;
-            let angle2 = Math.cos(x * 0.001 - time * 0.15) * Math.sin(y * 0.004 + time * 0.1) * Math.PI;
-            return (angle1 + angle2) * 0.5;
-        }
-
-        class FluidParticle {
-            constructor() {
-                this.reset();
-            }
-            reset() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.vx = 0;
-                this.vy = 0;
-                this.speedMultiplier = Math.random() * 0.5 + 0.5;
-                this.alpha = Math.random() * 0.4 + 0.15;
-                this.color = Math.random() > 0.3 ? '#38bdf8' : '#1e3a8a';
-                this.history = [];
-                this.historyLength = Math.floor(Math.random() * 8) + 3;
-            }
-            update(time) {
-                let angle = getForceField(this.x, this.y, time);
-                let targetVx = Math.cos(angle) * this.speedMultiplier * flowSpeed * 3;
-                let targetVy = Math.sin(angle) * this.speedMultiplier * flowSpeed * 3;
-
-                this.vx += (targetVx - this.vx) * 0.08;
-                this.vy += (targetVy - this.vy) * 0.08;
-
-                let dx = mouse.x - this.x;
-                let dy = mouse.y - this.y;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < 150) {
-                    let force = (150 - dist) / 150;
-                    let angleToMouse = Math.atan2(dy, dx) + Math.PI / 2;
-                    this.vx += Math.cos(angleToMouse) * force * 2;
-                    this.vy += Math.sin(angleToMouse) * force * 2;
-                }
-
-                this.history.push({x: this.x, y: this.y});
-                if (this.history.length > this.historyLength) {
-                    this.history.shift();
-                }
-
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
-                    this.reset();
-                }
-            }
-            draw() {
-                if (this.history.length < 2) return;
-                ctx.beginPath();
-                ctx.moveTo(this.history[0].x, this.history[0].y);
-                for (let i = 1; i < this.history.length; i++) {
-                    ctx.lineTo(this.history[i].x, this.history[i].y);
-                }
-                ctx.strokeStyle = this.color;
-                ctx.globalAlpha = this.alpha;
-                ctx.lineWidth = 1.2;
-                ctx.stroke();
-                ctx.globalAlpha = 1.0;
-            }
-        }
-
-        function initFluid() {
-            fluidParticles = [];
-            for (let i = 0; i < numFluidParticles; i++) {
-                fluidParticles.push(new FluidParticle());
-            }
-        }
-
-        function drawVectorGrid(time) {
-            let spacing = 55;
-            ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
-            ctx.lineWidth = 1;
-            for (let x = spacing / 2; x < width; x += spacing) {
-                for (let y = spacing / 2; y < height; y += spacing) {
-                    let angle = getForceField(x, y, time);
-                    let len = 8;
-                    ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
-                    ctx.stroke();
-                }
-            }
-        }
-
-
-        // ==========================================
-        // 3. CERN GRAVITATIONAL ATTRACTOR ENGINE
-        // ==========================================
-        const gravitySlider = document.getElementById('gravity-strength');
-        const particleCountSlider = document.getElementById('particle-count');
-
-        let gravityStrength = parseFloat(gravitySlider.value);
-        let numPhysicsParticles = parseInt(particleCountSlider.value);
-
-        let attractors = [];
-        let physicsParticles = [];
-
-        class Attractor {
-            constructor(x, y, mass) {
+        class Body {
+            constructor(x, y, vx, vy, mass, color) {
                 this.x = x;
                 this.y = y;
+                this.vx = vx;
+                this.vy = vy;
                 this.mass = mass;
-                this.baseAngle = Math.random() * Math.PI * 2;
-                this.orbitRadius = Math.random() * 80 + 30;
-                this.centerX = x;
-                this.centerY = y;
+                this.color = color;
+                this.trail = [];
+                this.maxTrail = 180;
             }
-            update(time) {
-                // Orbital mechanics animation
-                this.x = this.centerX + Math.cos(time + this.baseAngle) * this.orbitRadius;
-                this.y = this.centerY + Math.sin(time * 0.8 + this.baseAngle) * this.orbitRadius;
+
+            update() {
+                // Apply subtle central spring force to preserve frame alignment over long duration
+                let dx = (width / 2) - this.x;
+                let dy = (height / 2) - this.y;
+                this.vx += dx * springK;
+                this.vy += dy * springK;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                this.trail.push({ x: this.x, y: this.y });
+                if (this.trail.length > this.maxTrail) {
+                    this.trail.shift();
+                }
             }
+
             draw() {
+                // Render trailing coordinates
+                if (this.trail.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                    for (let i = 1; i < this.trail.length; i++) {
+                        ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                    }
+                    ctx.strokeStyle = this.color;
+                    ctx.globalAlpha = 0.35;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+
+                // Render current node core
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
-                ctx.fillStyle = '#f43f5e';
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = '#f43f5e';
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = 1.0;
                 ctx.fill();
-                ctx.shadowBlur = 0; // Clear blur constraints
             }
         }
 
-        class PhysicsParticle {
+        // Low mass cosmic dust particles orbiting the massive 3-body system
+        class DustParticle {
             constructor() {
                 this.reset();
             }
+
             reset() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 4;
-                this.vy = (Math.random() - 0.5) * 4;
-                this.color = Math.random() > 0.45 ? '#38bdf8' : '#f43f5e';
-                this.alpha = Math.random() * 0.4 + 0.25;
-                this.history = [];
-                this.historyLength = 9;
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 1.5;
+                this.alpha = Math.random() * 0.3 + 0.1;
+                this.color = Math.random() > 0.5 ? '#8e8e93' : '#ffffff';
+                this.trail = [];
+                this.maxTrail = 20;
             }
-            update() {
-                attractors.forEach(a => {
-                    let dx = a.x - this.x;
-                    let dy = a.y - this.y;
-                    let distSq = dx * dx + dy * dy;
-                    let dist = Math.sqrt(distSq);
 
-                    if (dist < 12) {
-                        // Quantum Annihilation/Collision event
+            update() {
+                // Gravity acceleration vectors calculated from all three massive bodies
+                bodies.forEach(b => {
+                    let dx = b.x - this.x;
+                    let dy = b.y - this.y;
+                    let distSq = dx*dx + dy*dy;
+                    let dist = Math.sqrt(distSq);
+                    
+                    if (dist < 10) {
                         this.reset();
                         return;
                     }
 
-                    // Newton model with distance softening variables
-                    let force = (gravityStrength * a.mass) / (distSq + 120);
-                    this.vx += (dx / dist) * force;
-                    this.vy += (dy / dist) * force;
+                    let force = (G * b.mass) / (distSq + softening);
+                    this.vx += (dx / dist) * force * 0.01;
+                    this.vy += (dy / dist) * force * 0.01;
                 });
 
-                // Repulsion boundaries near the cursor
-                let mDx = mouse.x - this.x;
-                let mDy = mouse.y - this.y;
-                let mDistSq = mDx*mDx + mDy*mDy;
-                if (mDistSq < 130 * 130 && mDistSq > 0) {
-                    let mDist = Math.sqrt(mDistSq);
-                    this.vx -= (mDx / mDist) * 0.4;
-                    this.vy -= (mDy / mDist) * 0.4;
-                }
-
-                // Damping/Viscosity so particles transition into chaotic orbital loops
-                this.vx *= 0.985;
-                this.vy *= 0.985;
+                // Apply velocity constraints to avoid escaping outer system
+                this.vx *= 0.995;
+                this.vy *= 0.995;
 
                 this.x += this.vx;
                 this.y += this.vy;
 
+                this.trail.push({ x: this.x, y: this.y });
+                if (this.trail.length > this.maxTrail) {
+                    this.trail.shift();
+                }
+
                 if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
                     this.reset();
                 }
-
-                this.history.push({ x: this.x, y: this.y });
-                if (this.history.length > this.historyLength) {
-                    this.history.shift();
-                }
             }
+
             draw() {
-                if (this.history.length < 2) return;
+                if (this.trail.length < 2) return;
                 ctx.beginPath();
-                ctx.moveTo(this.history[0].x, this.history[0].y);
-                for (let i = 1; i < this.history.length; i++) {
-                    ctx.lineTo(this.history[i].x, this.history[i].y);
+                ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                for (let i = 1; i < this.trail.length; i++) {
+                    ctx.lineTo(this.trail[i].x, this.trail[i].y);
                 }
                 ctx.strokeStyle = this.color;
                 ctx.globalAlpha = this.alpha;
-                ctx.lineWidth = 1.0;
+                ctx.lineWidth = 0.8;
                 ctx.stroke();
                 ctx.globalAlpha = 1.0;
             }
         }
 
         function initPhysics() {
-            attractors = [
-                new Attractor(width * 0.25, height * 0.45, 120),
-                new Attractor(width * 0.5, height * 0.6, 150),
-                new Attractor(width * 0.75, height * 0.35, 120)
+            const cx = width / 2;
+            const cy = height / 2;
+
+            // Stable chaotic initial offsets and velocities for the 3 bodies
+            bodies = [
+                // Body 1 (Swiss Red)
+                new Body(cx - 160, cy - 80, -0.6, 2.2, 2.5, '#ff3b30'),
+                // Body 2 (Pure White)
+                new Body(cx + 160, cy - 80, 0.6, -2.2, 2.5, '#ffffff'),
+                // Body 3 (Slate Gray)
+                new Body(cx, cy + 140, 1.2, 0.2, 2.5, '#48484a')
             ];
-            physicsParticles = [];
-            for (let i = 0; i < numPhysicsParticles; i++) {
-                physicsParticles.push(new PhysicsParticle());
+
+            particles = [];
+            for (let i = 0; i < numParticles; i++) {
+                particles.push(new DustParticle());
             }
         }
 
+        function calculateForces() {
+            // Pairwise Mutual Gravitational Calculation
+            // Force 1-2
+            let dx12 = bodies[1].x - bodies[0].x;
+            let dy12 = bodies[1].y - bodies[0].y;
+            let dSq12 = dx12*dx12 + dy12*dy12;
+            let dist12 = Math.sqrt(dSq12);
+            let f12 = (G * bodies[0].mass * bodies[1].mass) / (dSq12 + softening);
 
-        // ==========================================
-        // 4. ANIMATION ROUTER & DRIVER
-        // ==========================================
-        function initSim() {
-            if (currentSim === 'boids') {
-                initBoids();
-            } else if (currentSim === 'fluid') {
-                initFluid();
-            } else if (currentSim === 'gravity') {
-                initPhysics();
-            }
+            // Force 1-3
+            let dx13 = bodies[2].x - bodies[0].x;
+            let dy13 = bodies[2].y - bodies[0].y;
+            let dSq13 = dx13*dx13 + dy13*dy13;
+            let dist13 = Math.sqrt(dSq13);
+            let f13 = (G * bodies[0].mass * bodies[2].mass) / (dSq13 + softening);
+
+            // Force 2-3
+            let dx23 = bodies[2].x - bodies[1].x;
+            let dy23 = bodies[2].y - bodies[1].y;
+            let dSq23 = dx23*dx23 + dy23*dy23;
+            let dist23 = Math.sqrt(dSq23);
+            let f23 = (G * bodies[1].mass * bodies[2].mass) / (dSq23 + softening);
+
+            // Resolve vectors and apply to trajectories
+            bodies[0].vx += ((dx12 / dist12) * f12 + (dx13 / dist13) * f13) / bodies[0].mass;
+            bodies[0].vy += ((dy12 / dist12) * f12 + (dy13 / dist13) * f13) / bodies[0].mass;
+
+            bodies[1].vx += ((-dx12 / dist12) * f12 + (dx23 / dist23) * f23) / bodies[1].mass;
+            bodies[1].vy += ((-dy12 / dist12) * f12 + (dy23 / dist23) * f23) / bodies[1].mass;
+
+            bodies[2].vx += ((-dx13 / dist13) * f13 + (-dx23 / dist23) * f23) / bodies[2].mass;
+            bodies[2].vy += ((-dy13 / dist13) * f13 + (-dy23 / dist23) * f23) / bodies[2].mass;
         }
 
-        let time = 0;
         function animate() {
-            // Apply semi-transparent clearing layer to preserve trailing effects
-            ctx.fillStyle = 'rgba(6, 8, 12, 0.18)';
+            // Semi-transparent redraw to enable soft kinetic trails
+            ctx.fillStyle = 'rgba(8, 8, 10, 0.1)';
             ctx.fillRect(0, 0, width, height);
 
-            if (currentSim === 'boids') {
-                boids.forEach(boid => {
-                    boid.flock();
-                    boid.avoidCursor();
-                    boid.update();
-                    boid.draw();
-                });
-            } else if (currentSim === 'fluid') {
-                time += 0.005;
-                if (showVectors) {
-                    drawVectorGrid(time);
-                }
-                fluidParticles.forEach(p => {
-                    p.update(time);
-                    p.draw();
-                });
-            } else if (currentSim === 'gravity') {
-                time += 0.01;
-                attractors.forEach(a => {
-                    a.update(time);
-                    a.draw();
-                });
-                physicsParticles.forEach(p => {
-                    p.update();
-                    p.draw();
-                });
-            }
+            calculateForces();
+
+            bodies.forEach(b => {
+                b.update();
+                b.draw();
+            });
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
 
             requestAnimationFrame(animate);
         }
 
-
-        // ==========================================
-        // 5. INTERFACE EVENT MATRIX (FLEXBOX DESIGN)
-        // ==========================================
-        const tabs = document.querySelectorAll('.tab-btn');
-        const controlGroups = document.querySelectorAll('.sim-control-group');
-
-        tabs.forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                // Toggle Tab State
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-
-                // Toggle Active Simulation Flag
-                currentSim = tab.dataset.sim;
-
-                // Toggle Visible Slider Group inside the UI
-                controlGroups.forEach(group => {
-                    group.classList.remove('active');
-                    if (group.id === `${currentSim}-controls`) {
-                        group.classList.add('active');
-                    }
-                });
-
-                // Clear the canvas to prevent particle ghost trails from blending on switch
-                ctx.fillStyle = '#06080c';
-                ctx.fillRect(0, 0, width, height);
-
-                initSim();
-            });
-        });
-
-        // Boid Listeners
-        cohesionSlider.addEventListener('input', (e) => cohesionWeight = parseFloat(e.target.value));
-        alignmentSlider.addEventListener('input', (e) => alignmentWeight = parseFloat(e.target.value));
-        separationSlider.addEventListener('input', (e) => separationWeight = parseFloat(e.target.value));
-        boidCountSlider.addEventListener('input', (e) => {
-            numBoids = parseInt(e.target.value);
-            initBoids();
-        });
-
-        // Fluid Listeners
-        speedSlider.addEventListener('input', (e) => flowSpeed = parseFloat(e.target.value));
-        fluidCountSlider.addEventListener('input', (e) => {
-            numFluidParticles = parseInt(e.target.value);
-            initFluid();
-        });
-        vectorCheckbox.addEventListener('change', (e) => showVectors = e.target.checked);
-
-        // Gravity Listeners
-        gravitySlider.addEventListener('input', (e) => gravityStrength = parseFloat(e.target.value));
-        particleCountSlider.addEventListener('input', (e) => {
-            numPhysicsParticles = parseInt(e.target.value);
-            initPhysics();
-        });
-
-        // Execute primary sequence
-        initSim();
+        // Initialize and execute sequence
+        initPhysics();
         animate();
     </script>
 </body>
