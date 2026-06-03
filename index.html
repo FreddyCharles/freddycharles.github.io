@@ -48,6 +48,13 @@
             display: block;
             width: 100%;
             height: 100%;
+            transition: filter 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth transition for Gaussian blur */
+            filter: blur(0px);
+        }
+
+        /* Active CSS Gaussian Blur when Dim & Slow Mo is toggled */
+        canvas.blurred {
+            filter: blur(8px);
         }
 
         /* Minimalist Swiss Control Panel */
@@ -582,11 +589,13 @@
                 toggleDimBtn.classList.add('active-state');
                 sunSvg.style.display = 'none';
                 moonSvg.style.display = 'block';
+                canvas.classList.add('blurred'); // Apply CSS Gaussian blur
             } else {
                 toggleDimBtn.setAttribute('title', 'Toggle Dim & Slow Mode');
                 toggleDimBtn.classList.remove('active-state');
                 sunSvg.style.display = 'block';
                 moonSvg.style.display = 'none';
+                canvas.classList.remove('blurred'); // Remove Gaussian blur
             }
         });
 
@@ -673,7 +682,7 @@
                 this.vy = vy;
                 this.mass = mass;
                 this.color = color;
-                this.radius = 4.5; 
+                this.radius = 9.0; // Enriched planet radius from 4.5 to 9.0 (planet scale increase)
                 this.trail = [];
                 this.maxTrail = 180;
             }
@@ -736,7 +745,8 @@
             }
 
             draw() {
-                const opacityMultiplier = isDimSlowMode ? 0.2 : 1.0;
+                // Reduced dimming factor: 0.55 opacity multiplier instead of 0.2
+                const opacityMultiplier = isDimSlowMode ? 0.55 : 1.0;
 
                 // Beautiful faded line segments
                 if (this.trail.length > 1) {
@@ -834,7 +844,8 @@
             }
 
             draw() {
-                const opacityMultiplier = isDimSlowMode ? 0.2 : 1.0;
+                // Reduced dimming factor: 0.55 opacity multiplier instead of 0.2
+                const opacityMultiplier = isDimSlowMode ? 0.55 : 1.0;
 
                 if (this.trail.length < 2) return;
                 for (let i = 1; i < this.trail.length; i++) {
