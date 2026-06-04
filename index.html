@@ -43,7 +43,8 @@
             width: 100vw;
             height: 100vh;
             z-index: 100; /* overlaying text content */
-            pointer-events: none; /* allows clicking/selecting text beneath */
+            pointer-events: none; /* allows clicking/selecting text beneath by default */
+            transition: pointer-events 0.2s ease;
         }
 
         /* Scoped specifically to physics canvas so visualizer isn't affected */
@@ -58,52 +59,202 @@
             filter: blur(8px);
         }
 
-        /* --- FLOATING CONTROLS --- */
-        .sim-controls {
+        /* --- HIGH-FIDELITY COMPACT SIM CONTROL PANEL --- */
+        .sim-control-panel {
             position: fixed;
-            top: 1.5rem;
+            top: 5.5rem;
             right: 1.5rem;
             z-index: 200;
+            background: rgba(8, 8, 10, 0.95);
+            border: 1px solid var(--border-color);
+            width: 200px; /* Reduced further for tight spacing */
+            font-family: var(--font-mono);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             display: flex;
-            gap: 0.5rem;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
         }
 
-        .sim-controls button {
-            background: rgba(8, 8, 10, 0.85);
-            color: var(--text-primary);
+        .sim-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            user-select: none;
+        }
+
+        .panel-title {
+            font-size: 0.65rem;
+            color: var(--swiss-red);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+        }
+
+        .header-icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+            transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .header-icon-btn:hover {
+            color: var(--swiss-red);
+        }
+
+        /* Rotating gear transform */
+        .header-icon-btn svg {
+            width: 13px;
+            height: 13px;
+            fill: currentColor;
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .header-icon-btn.active-state svg {
+            transform: rotate(60deg);
+            color: var(--swiss-red);
+        }
+
+        /* Rotating Collapse arrow */
+        #collapse-arrow {
+            display: inline-block;
+            font-size: 0.7rem;
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Collapsible Smooth content animations */
+        .sim-panel-body {
+            max-height: 400px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.4s ease;
+            opacity: 1;
+        }
+
+        .sim-panel-body.collapsed {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            opacity: 0;
+            border-top-color: transparent;
+        }
+
+        /* Horizontal 4-Button Grid Layout */
+        .control-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.35rem;
+        }
+
+        .sim-control-btn {
+            background: rgba(8, 8, 10, 0.5);
             border: 1px solid var(--border-color);
-            width: 2.25rem;
-            height: 2.25rem;
+            color: var(--text-secondary);
+            height: 34px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease-in-out;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             outline: none;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
         }
 
-        .sim-controls button svg {
-            width: 1rem;
-            height: 1rem;
+        .sim-control-btn svg {
+            width: 15px;
+            height: 15px;
             fill: currentColor;
-            transition: transform 0.2s ease;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .sim-controls button:hover {
-            border-color: var(--swiss-red);
-            color: var(--swiss-red);
-        }
-
-        .sim-controls button:hover svg {
-            transform: scale(1.1);
-        }
-
-        .sim-controls button.active-state {
+        .sim-control-btn:hover {
             border-color: var(--swiss-red);
             color: var(--swiss-red);
             background: rgba(255, 59, 48, 0.05);
+        }
+
+        .sim-control-btn:hover svg {
+            transform: scale(1.1);
+        }
+
+        .sim-control-btn.active-state {
+            border-color: var(--swiss-red);
+            color: var(--swiss-red);
+            background: rgba(255, 59, 48, 0.05);
+            box-shadow: 0 0 8px rgba(255, 59, 48, 0.1);
+        }
+
+        /* --- PARAMETERS EXPANSION SLIDER DRAWER --- */
+        .sim-settings-drawer {
+            max-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            border-top: 1px solid transparent;
+            opacity: 0;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, margin 0.4s ease, padding 0.4s ease;
+        }
+
+        .sim-settings-drawer.open {
+            max-height: 380px; /* Expanded to house the body count slider */
+            opacity: 1;
+            margin-top: 0.5rem;
+            padding-top: 0.75rem;
+            border-top-color: var(--border-color);
+        }
+
+        .sim-param-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .sim-param-label {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            text-transform: uppercase;
+            transition: color 0.15s ease;
+        }
+
+        .sim-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 2px;
+            background: var(--border-color);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .sim-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 8px;
+            height: 12px;
+            background: var(--text-primary);
+            border: 1px solid var(--border-color);
+            transition: background 0.15s;
+        }
+
+        .sim-slider::-webkit-slider-thumb:hover {
+            background: var(--swiss-red);
         }
 
         /* --- AUDIO PLAYER BANNER STRIP --- */
@@ -524,39 +675,104 @@
             color: #fff;
         }
 
-        @media (max-width: 600px) {
-            .sim-controls {
+        @media (max-width: 768px) {
+            .sim-control-panel {
                 top: auto;
                 bottom: 1.5rem;
                 right: 1.5rem;
-                flex-direction: column;
-                gap: 0.25rem;
+                left: 1.5rem;
+                width: auto;
+                max-width: none;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- Sim Control Center -->
-    <div class="sim-controls">
-        <button id="toggle-sim-btn" class="active-state" title="Pause Simulation">
-            <svg id="pause-svg" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-            <svg id="play-svg" viewBox="0 0 24 24" style="display: none;"><path d="M8 5v14l11-7z"/></svg>
-        </button>
-        <button id="toggle-dim-btn" class="active-state" title="Toggle Standard Mode"> <!-- Starts active -->
-            <svg id="sun-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-            <svg id="moon-svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> <!-- Moon visible first -->
-        </button>
+    <!-- Ultra-Compact Collapsible Physics Panel with Dynamic Vectors -->
+    <div class="sim-control-panel" id="main-sim-panel">
+        <div class="sim-panel-header">
+            <span class="panel-title">Physics Sim</span>
+            <div class="header-actions">
+                <button id="toggle-panel-settings" class="header-icon-btn" title="Edit System Parameters">
+                    <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                </button>
+                <button id="toggle-panel-collapse" class="header-icon-btn" title="Collapse Control Panel">
+                    <span id="collapse-arrow">▲</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Collapsible Content Wrapper -->
+        <div id="sim-panel-body" class="sim-panel-body">
+            <div class="control-row">
+                <!-- 1. Play / Pause Button -->
+                <button id="toggle-sim-btn" class="sim-control-btn active-state" title="Pause Simulation">
+                    <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    <svg class="icon-play" viewBox="0 0 24 24" style="display: none;"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <!-- 2. Slow Motion Button -->
+                <button id="toggle-dim-btn" class="sim-control-btn active-state" title="Toggle Slow Motion (Ambient)">
+                    <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                </button>
+                <!-- 3. Dynamic Click-To-Spawn Button -->
+                <button id="toggle-spawn-btn" class="sim-control-btn" title="Enable Canvas Click-to-Spawn">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.47 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.54-7.49-7.49H3v-2h3.51c.49-3.95 3.54-7 7.49-7.49V3h-2v3.51c3.95.49 7 3.54 7.49 7.49H21v2h-3.51c-.49 3.95-3.54 7-7.49 7.49V21h-2v-1.07zM12 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                </button>
+                <!-- 4. Center Orbit Planet Spawner -->
+                <button id="add-body-btn" class="sim-control-btn" title="Add Orbital Body">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.47 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                </button>
+            </div>
+
+            <!-- Internal Sliding Drawer for Parameter Sliders -->
+            <div id="sim-settings-drawer" class="sim-settings-drawer">
+                <!-- Logarithmic Body Count Slider -->
+                <div class="sim-param-group">
+                    <div class="sim-param-label" id="label-body-count">
+                        <span>BODY COUNT</span>
+                        <span id="val-body-count">3</span>
+                    </div>
+                    <input id="slider-body-count" class="sim-slider" type="range" min="0" max="100" step="1" value="28">
+                </div>
+
+                <div class="sim-param-group">
+                    <div class="sim-param-label">
+                        <span>GRAVITY (G)</span>
+                        <span id="val-gravity">375</span>
+                    </div>
+                    <input id="slider-gravity" class="sim-slider" type="range" min="50" max="1000" step="10" value="375">
+                </div>
+
+                <div class="sim-param-group">
+                    <div class="sim-param-label">
+                        <span>FRICTION (DRAG)</span>
+                        <span id="val-drag">0.993</span>
+                    </div>
+                    <input id="slider-drag" class="sim-slider" type="range" min="0.950" max="1.000" step="0.001" value="0.993">
+                </div>
+
+                <div class="sim-param-group">
+                    <div class="sim-param-label">
+                        <span>REPEL RANGE</span>
+                        <span id="val-repel-range">75px</span>
+                    </div>
+                    <input id="slider-repel-range" class="sim-slider" type="range" min="20" max="180" step="5" value="75">
+                </div>
+
+                <div class="sim-param-group">
+                    <div class="sim-param-label">
+                        <span>REPEL FORCE</span>
+                        <span id="val-repel-force">60</span>
+                    </div>
+                    <input id="slider-repel-force" class="sim-slider" type="range" min="0" max="200" step="5" value="60">
+                </div>
+
+                <button id="reset-sim-btn" class="sim-control-btn" style="margin-top: 0.25rem; justify-content: center;" title="Reset system back to original settings">
+                    <strong>RESTORE DEFAULTS</strong>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Active Physical Elements Canvas (Placed on top of DOM) -->
@@ -772,7 +988,7 @@
             repulseRadius: 140,             // Cursor influence field
             repulseStrength: 0.01,          // Cursor deflection multiplier
             bounceElasticity: 0.85,         // Boundary collision momentum retention
-            numParticles: 30,               // Cosmic background dust particles
+            numParticles: 30,               // Default cosmic background dust particles
             drag: 0.993,                    // Ambient atmospheric drag
             dtSlow: 0.5,                    // Step scalar for Slow-Mo active state
             
@@ -780,7 +996,13 @@
             strongRepulsionThreshold: 75,   // Expanded boundary to allow gentle initial interaction
             strongRepulsionStrength: 60,    // Softened constant (180 / 3)
             proximityChargeRate: 0.001,     // Slower speed of charge build-up when close (0.003 / 3)
-            proximityDischargeRate: 0.0017  // Slower dissipation rate of charge once separated (0.005 / 3)
+            proximityDischargeRate: 0.0017, // Slower dissipation rate of charge once separated (0.005 / 3)
+
+            // Adaptive tier variables configured on execution
+            maxBodies: 150,                 // Elevated baseline headroom (will self-cap dynamically on slowdown)
+            planetRadius: 8.0,              // Dynamic base body size scale factor
+            maxTrailLength: 120,            // Limit trail length based on computing budget
+            deviceTier: "MEDIUM"            // Client performance bucket
         };
 
         // =========================================================================
@@ -792,6 +1014,7 @@
         const STATE = {
             isSimRunning: true,             // Toggled via Play/Pause button
             isDimSlowMode: true,            // DEFAULTED TO TRUE: Dim & Blurred Mode on start
+            isSpawnModeActive: false,       // Custom interactive direct click-to-spawn state
             lastScrollY: window.scrollY,    // Cached window position to calculate scroll delta
             mouse: { 
                 x: -1000, 
@@ -799,36 +1022,109 @@
                 active: false 
             },
             
-            // Charge values tracked between body pairs. Charge increases when they 
-            // remain within repulsion threshold, gradually scaling up counter forces.
-            proximityCharge: {
-                '0-1': 0,
-                '0-2': 0,
-                '1-2': 0
-            }
+            // Charge values tracked dynamically between bodies to enforce local potential barriers
+            proximityCharge: {}
         };
 
         // =========================================================================
         // 3. UI ELEMENT SELECTORS & BINDINGS
         // =========================================================================
         const UI = {
+            // Collapsible structural hooks
+            mainSimPanel: document.getElementById('main-sim-panel'),
+            panelCollapseBtn: document.getElementById('toggle-panel-collapse'),
+            panelSettingsBtn: document.getElementById('toggle-panel-settings'),
+            panelBody: document.getElementById('sim-panel-body'),
+            settingsDrawer: document.getElementById('sim-settings-drawer'),
+            collapseArrow: document.getElementById('collapse-arrow'),
+
+            // Simulation interactives
             toggleSimBtn: document.getElementById('toggle-sim-btn'),
             toggleDimBtn: document.getElementById('toggle-dim-btn'),
-            pauseSvg: document.getElementById('pause-svg'),
-            playSvg: document.getElementById('play-svg'),
-            sunSvg: document.getElementById('sun-svg'),
-            moonSvg: document.getElementById('moon-svg')
+            addBodyBtn: document.getElementById('add-body-btn'),
+            toggleSpawnBtn: document.getElementById('toggle-spawn-btn'),
+            resetSimBtn: document.getElementById('reset-sim-btn'),
+
+            // Sliders & value labels
+            sliderBodyCount: document.getElementById('slider-body-count'),
+            valBodyCount: document.getElementById('val-body-count'),
+            labelBodyCount: document.getElementById('label-body-count'),
+            sliderGravity: document.getElementById('slider-gravity'),
+            valGravity: document.getElementById('val-gravity'),
+            sliderDrag: document.getElementById('slider-drag'),
+            valDrag: document.getElementById('val-drag'),
+            sliderRepelRange: document.getElementById('slider-repel-range'),
+            valRepelRange: document.getElementById('val-repel-range'),
+            sliderRepelForce: document.getElementById('slider-repel-force'),
+            valRepelForce: document.getElementById('val-repel-force')
         };
 
         // =========================================================================
-        // 4. HELPER FUNCTIONS
+        // 4. DEVICE PROFILE & PERFORMANCE OPTIMIZATION
+        // =========================================================================
+        function optimizeForDevice() {
+            let score = 0;
+            
+            // 1. Thread concurrency check
+            if (navigator.hardwareConcurrency) {
+                score += navigator.hardwareConcurrency; // Add core count to baseline
+            } else {
+                score += 4;
+            }
+            
+            // 2. System memory profiling
+            if (navigator.deviceMemory) {
+                score += navigator.deviceMemory; 
+            } else {
+                score += 4;
+            }
+            
+            // 3. Form factor validation
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile) {
+                score -= 6; // Deduct score to reflect tighter GPU/thermal limit budgets
+            }
+            
+            // Assign responsive physics configuration tier
+            if (score >= 12) {
+                CONFIG.deviceTier = "HIGH";
+                CONFIG.numParticles = 45;
+                CONFIG.planetRadius = 9.0;
+                CONFIG.maxTrailLength = 180;
+                CONFIG.maxBodies = 180;      // Highly optimized desktop baseline
+            } else if (score >= 6) {
+                CONFIG.deviceTier = "MEDIUM";
+                CONFIG.numParticles = 25;
+                CONFIG.planetRadius = 8.0;
+                CONFIG.maxTrailLength = 100;
+                CONFIG.maxBodies = 90;       // Balanced baseline
+            } else {
+                CONFIG.deviceTier = "LOW";
+                CONFIG.numParticles = 12;
+                CONFIG.planetRadius = 6.0;
+                CONFIG.maxTrailLength = 40;
+                CONFIG.maxBodies = 30;        // Secure base limit
+                
+                // Disable resource-intensive CSS layout blurs to maintain performance target on older mobile browsers
+                canvas.classList.remove('blurred');
+                canvas.style.transition = "none";
+                canvas.style.filter = "none";
+            }
+            console.log(`Profiler Configured: Tier ${CONFIG.deviceTier} (Performance Index: ${score})`);
+        }
+
+        // Apply device optimization rules first
+        optimizeForDevice();
+
+        // =========================================================================
+        // 5. HELPER FUNCTIONS
         // =========================================================================
         const getProximityKey = (idx1, idx2) => {
             return idx1 < idx2 ? `${idx1}-${idx2}` : `${idx2}-${idx1}`;
         };
 
         // =========================================================================
-        // 5. PHYSICS & RENDER OBJECTS (CLASSES)
+        // 6. PHYSICS & RENDER OBJECTS (CLASSES)
         // =========================================================================
         class Body {
             constructor(x, y, vx, vy, mass, color) {
@@ -838,9 +1134,10 @@
                 this.vy = vy;
                 this.mass = mass;
                 this.color = color;
-                this.radius = CONFIG.planetRadius || 9.0; 
+                // Dynamically scale visual size according to mass distribution and device presets
+                this.radius = CONFIG.planetRadius + (mass * 1.5); 
                 this.trail = [];
-                this.maxTrail = CONFIG.maxTrailLength || 180;
+                this.maxTrail = CONFIG.maxTrailLength;
             }
 
             update() {
@@ -939,7 +1236,7 @@
             reset() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 0.4; // Restored matching G=375 speeds
+                this.vx = (Math.random() - 0.5) * 0.4; // Speed calibration
                 this.vy = (Math.random() - 0.5) * 0.4;
                 this.alpha = Math.random() * 0.25 + 0.05;
                 this.color = Math.random() > 0.5 ? '#8e8e93' : '#ffffff';
@@ -952,7 +1249,7 @@
 
                 const dt = STATE.isDimSlowMode ? CONFIG.dtSlow : 1.0;
 
-                // Gravity calculations from all massive planets
+                // Dynamic gravity calculation from all active massive bodies
                 bodies.forEach(b => {
                     const dx = b.x - this.x;
                     const dy = b.y - this.y;
@@ -965,7 +1262,7 @@
 
                     const dist = Math.sqrt(distSq);
                     const force = (CONFIG.G * b.mass) / (distSq + CONFIG.softening);
-                    this.vx += (dx / dist) * force * 0.003 * dt; // Restored matching G=375 scale factors
+                    this.vx += (dx / dist) * force * 0.003 * dt; 
                     this.vy += (dy / dist) * force * 0.003 * dt;
                 });
 
@@ -979,7 +1276,7 @@
                         const mDist = Math.sqrt(mDistSq);
                         if (mDist > 0) {
                             const force = (90 - mDist) / 90;
-                            this.vx += (mdx / mDist) * force * 0.15 * dt; // Restored matching G=375 scale factors
+                            this.vx += (mdx / mDist) * force * 0.15 * dt; 
                             this.vy += (mdy / mDist) * force * 0.15 * dt;
                         }
                     }
@@ -1009,7 +1306,7 @@
                 for (let i = 1; i < len; i++) {
                     ctx.beginPath();
                     ctx.moveTo(this.trail[i - 1].x, this.trail[i - 1].y);
-                    ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                    ctx.lineTo(this.trail[i], this.trail[i]);
                     ctx.strokeStyle = this.color;
                     ctx.globalAlpha = (i / len) * this.alpha * 0.6 * opacityMultiplier;
                     ctx.lineWidth = 0.6;
@@ -1020,7 +1317,7 @@
         }
 
         // =========================================================================
-        // 6. CORE ENGINE LOGIC (FORCES & PHYSICS)
+        // 7. CORE ENGINE LOGIC (DYNAMIC N-BODY INTERACTIONS)
         // =========================================================================
         let bodies = [];
         let particles = [];
@@ -1034,6 +1331,8 @@
             const computeInteractiveForces = (idx1, idx2) => {
                 const b1 = bodies[idx1];
                 const b2 = bodies[idx2];
+                if (!b1 || !b2) return;
+
                 const pairKey = getProximityKey(idx1, idx2);
 
                 const dx = b2.x - b1.x;
@@ -1046,8 +1345,11 @@
                 // Universal gravitational attraction
                 let f = (CONFIG.G * b1.mass * b2.mass) / (dSq + CONFIG.softening);
 
-                // Short-range delay repulsion mechanics
+                // Short-range delayed repulsion mechanics
                 if (dist < CONFIG.strongRepulsionThreshold) {
+                    if (STATE.proximityCharge[pairKey] === undefined) {
+                        STATE.proximityCharge[pairKey] = 0;
+                    }
                     // Accumulate repulsion charge slowly
                     STATE.proximityCharge[pairKey] = Math.min(1.0, STATE.proximityCharge[pairKey] + CONFIG.proximityChargeRate * dt);
                     
@@ -1060,7 +1362,9 @@
                     f -= fRepel; 
                 } else {
                     // Dissipate charge once separated
-                    STATE.proximityCharge[pairKey] = Math.max(0.0, STATE.proximityCharge[pairKey] - CONFIG.proximityDischargeRate * dt);
+                    if (STATE.proximityCharge[pairKey] !== undefined) {
+                        STATE.proximityCharge[pairKey] = Math.max(0.0, STATE.proximityCharge[pairKey] - CONFIG.proximityDischargeRate * dt);
+                    }
                 }
 
                 // Resolve force vector
@@ -1073,14 +1377,87 @@
                 b2.vy -= fy / b2.mass;
             };
 
-            // Calculate mutual interactions for all 3 pairing states
-            computeInteractiveForces(0, 1);
-            computeInteractiveForces(0, 2);
-            computeInteractiveForces(1, 2);
+            // Calculate mutual interactions for all bodies dynamically
+            const len = bodies.length;
+            for (let i = 0; i < len; i++) {
+                for (let j = i + 1; j < len; j++) {
+                    computeInteractiveForces(i, j);
+                }
+            }
+        }
+
+        // Helper to spawn a body with rotational/orbital momentum relative to the screen center
+        function spawnBody(x, y, massInput) {
+            const colors = ['#ff3b30', '#ffffff', '#8e8e93', '#ff9f0a', '#30d158', '#0a84ff', '#bf5af2'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const mass = massInput || (1.5 + Math.random() * 2.0);
+
+            // Compute distance from center coordinates
+            const cx = width / 2;
+            const cy = height / 2;
+            const dx = x - cx;
+            const dy = y - cy;
+            const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+
+            // Compute tangential vectors to encourage planetary rotation rather than sudden implosion
+            const tx = -dy / distance;
+            const ty = dx / distance;
+            const speed = (0.2 + Math.random() * 0.3) * (STATE.isDimSlowMode ? 1.5 : 1.0);
+
+            const vx = tx * speed;
+            const vy = ty * speed;
+
+            bodies.push(new Body(x, y, vx, vy, mass, color));
+        }
+
+        // Adjust system body population upwards or downwards dynamically
+        function adjustBodyCount(targetCount) {
+            const currentCount = bodies.length;
+            if (targetCount > currentCount) {
+                const diff = targetCount - currentCount;
+                for (let i = 0; i < diff; i++) {
+                    const cx = width / 2;
+                    const cy = height / 2;
+                    const angle = Math.random() * Math.PI * 2;
+                    const offsetRadius = 100 + Math.random() * 150;
+                    const x = cx + Math.cos(angle) * offsetRadius;
+                    const y = cy + Math.sin(angle) * offsetRadius;
+                    spawnBody(x, y);
+                }
+            } else if (targetCount < currentCount) {
+                const diff = currentCount - targetCount;
+                for (let i = 0; i < diff; i++) {
+                    bodies.pop();
+                }
+            }
+        }
+
+        // Compute bi-directional logarithmic mapping for the slider interface to align with current array length
+        function syncBodySlider() {
+            const count = bodies.length;
+            UI.valBodyCount.textContent = count;
+            const safeCount = Math.max(1, count);
+            const S = Math.round(100 * (Math.log(safeCount) / Math.log(CONFIG.maxBodies)));
+            UI.sliderBodyCount.value = Math.max(0, Math.min(100, S));
+        }
+
+        // Synchronize and update sliders with dynamic config structures
+        function updateConfigFromSliders() {
+            CONFIG.G = parseFloat(UI.sliderGravity.value);
+            UI.valGravity.textContent = CONFIG.G;
+
+            CONFIG.drag = parseFloat(UI.sliderDrag.value);
+            UI.valDrag.textContent = CONFIG.drag.toFixed(3);
+
+            CONFIG.strongRepulsionThreshold = parseFloat(UI.sliderRepelRange.value);
+            UI.valRepelRange.textContent = CONFIG.strongRepulsionThreshold + "px";
+
+            CONFIG.strongRepulsionStrength = parseFloat(UI.sliderRepelForce.value);
+            UI.valRepelForce.textContent = CONFIG.strongRepulsionStrength;
         }
 
         // =========================================================================
-        // 7. INTERACTIVE INPUT LISTENERS
+        // 8. INTERACTIVE INPUT LISTENERS
         // =========================================================================
         
         // Window Resize proportional scaling helper
@@ -1107,19 +1484,22 @@
         window.addEventListener('pointerleave', disablePointer);
         window.addEventListener('pointercancel', disablePointer);
 
-        // Simulation Run/Pause Interactivity
+        // Simulation Run/Pause Interactivity (Icon Swap)
         UI.toggleSimBtn.addEventListener('click', () => {
             STATE.isSimRunning = !STATE.isSimRunning;
+            const playIcon = UI.toggleSimBtn.querySelector('.icon-play');
+            const pauseIcon = UI.toggleSimBtn.querySelector('.icon-pause');
+
             if (STATE.isSimRunning) {
-                UI.toggleSimBtn.setAttribute('title', 'Pause Simulation');
                 UI.toggleSimBtn.classList.add('active-state');
-                UI.pauseSvg.style.display = 'block';
-                UI.playSvg.style.display = 'none';
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'block';
+                UI.toggleSimBtn.setAttribute('title', 'Pause Simulation');
             } else {
-                UI.toggleSimBtn.setAttribute('title', 'Resume Simulation');
                 UI.toggleSimBtn.classList.remove('active-state');
-                UI.pauseSvg.style.display = 'none';
-                UI.playSvg.style.display = 'block';
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+                UI.toggleSimBtn.setAttribute('title', 'Resume Simulation');
             }
         });
 
@@ -1127,18 +1507,109 @@
         UI.toggleDimBtn.addEventListener('click', () => {
             STATE.isDimSlowMode = !STATE.isDimSlowMode;
             if (STATE.isDimSlowMode) {
-                UI.toggleDimBtn.setAttribute('title', 'Toggle Standard Mode');
                 UI.toggleDimBtn.classList.add('active-state');
-                UI.sunSvg.style.display = 'none';
-                UI.moonSvg.style.display = 'block';
-                canvas.classList.add('blurred');
+                UI.toggleDimBtn.setAttribute('title', 'Toggle Fast Motion');
+                if (CONFIG.deviceTier !== "LOW") canvas.classList.add('blurred');
             } else {
-                UI.toggleDimBtn.setAttribute('title', 'Toggle Dim & Slow Mode');
                 UI.toggleDimBtn.classList.remove('active-state');
-                UI.sunSvg.style.display = 'block';
-                UI.moonSvg.style.display = 'none';
-                canvas.classList.remove('blurred');
+                UI.toggleDimBtn.setAttribute('title', 'Toggle Slow Motion');
+                if (CONFIG.deviceTier !== "LOW") canvas.classList.remove('blurred');
             }
+        });
+
+        // Button Click Orbit Spawner
+        UI.addBodyBtn.addEventListener('click', () => {
+            if (bodies.length >= CONFIG.maxBodies) return; // Prevent spawning past active hardware buffer limit
+            const cx = width / 2;
+            const cy = height / 2;
+            const angle = Math.random() * Math.PI * 2;
+            const offsetRadius = 120 + Math.random() * 120;
+            const x = cx + Math.cos(angle) * offsetRadius;
+            const y = cy + Math.sin(angle) * offsetRadius;
+            spawnBody(x, y);
+            syncBodySlider();
+        });
+
+        // Canvas Click-to-Spawn Activation Mode
+        UI.toggleSpawnBtn.addEventListener('click', () => {
+            STATE.isSpawnModeActive = !STATE.isSpawnModeActive;
+            const container = document.getElementById('canvas-container');
+
+            if (STATE.isSpawnModeActive) {
+                UI.toggleSpawnBtn.classList.add('active-state');
+                container.style.pointerEvents = "auto";
+                canvas.style.cursor = "crosshair";
+            } else {
+                UI.toggleSpawnBtn.classList.remove('active-state');
+                container.style.pointerEvents = "none";
+                canvas.style.cursor = "default";
+            }
+        });
+
+        // Canvas Spawn click capture
+        canvas.addEventListener('click', (e) => {
+            if (STATE.isSpawnModeActive && bodies.length < CONFIG.maxBodies) {
+                const rect = canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+                spawnBody(clickX, clickY);
+                syncBodySlider();
+            }
+        });
+
+        // Collapsing UI interaction bindings
+        UI.panelCollapseBtn.addEventListener('click', () => {
+            const isCollapsed = UI.panelBody.classList.toggle('collapsed');
+            UI.mainSimPanel.classList.toggle('collapsed-state', isCollapsed);
+        });
+
+        UI.panelSettingsBtn.addEventListener('click', () => {
+            // Expand panel body first if it was previously collapsed
+            if (UI.panelBody.classList.contains('collapsed')) {
+                UI.panelBody.classList.remove('collapsed');
+                UI.mainSimPanel.classList.remove('collapsed-state');
+            }
+
+            const isSettingsOpen = UI.settingsDrawer.classList.toggle('open');
+            if (isSettingsOpen) {
+                UI.panelSettingsBtn.classList.add('active-state');
+            } else {
+                UI.panelSettingsBtn.classList.remove('active-state');
+            }
+        });
+
+        // Logarithmic Body Count Slider Change Input
+        UI.sliderBodyCount.addEventListener('input', (e) => {
+            const S = parseInt(e.target.value);
+            // Translate the range logarithmically using the active tier's maximum body scale limit
+            const targetCount = Math.max(1, Math.round(Math.pow(CONFIG.maxBodies, S / 100)));
+            adjustBodyCount(targetCount);
+            UI.valBodyCount.textContent = targetCount;
+        });
+
+        // Sync parameters inputs dynamically
+        UI.sliderGravity.addEventListener('input', updateConfigFromSliders);
+        UI.sliderDrag.addEventListener('input', updateConfigFromSliders);
+        UI.sliderRepelRange.addEventListener('input', updateConfigFromSliders);
+        UI.sliderRepelForce.addEventListener('input', updateConfigFromSliders);
+
+        // Parameter Reset System
+        UI.resetSimBtn.addEventListener('click', () => {
+            // Restore constants in CONFIG
+            CONFIG.G = 375;
+            CONFIG.drag = 0.993;
+            CONFIG.strongRepulsionThreshold = 75;
+            CONFIG.strongRepulsionStrength = 60;
+
+            // Sync slider elements back to baseline values
+            UI.sliderGravity.value = 375;
+            UI.sliderDrag.value = 0.993;
+            UI.sliderRepelRange.value = 75;
+            UI.sliderRepelForce.value = 60;
+
+            updateConfigFromSliders();
+            initPhysics();
+            STATE.proximityCharge = {};
         });
 
         // Inverse Scroll Momentum
@@ -1152,19 +1623,62 @@
             const scrollDampen = STATE.isDimSlowMode ? 0.25 : 1.0;
 
             bodies.forEach(b => {
-                b.vy -= deltaY * 0.03 * scrollDampen; // Restored matching G=375 speeds
+                b.vy -= deltaY * 0.03 * scrollDampen; 
                 b.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.015 * scrollDampen;
             });
 
             particles.forEach(p => {
-                p.vy -= deltaY * 0.02 * scrollDampen; // Restored matching G=375 speeds
+                p.vy -= deltaY * 0.02 * scrollDampen; 
                 p.vx += (Math.random() - 0.5) * Math.abs(deltaY) * 0.01 * scrollDampen;
             });
         });
 
+        // Start collapsed on small screen widths to maintain CV text priority
+        if (window.innerWidth < 768) {
+            UI.panelBody.classList.add('collapsed');
+            UI.mainSimPanel.classList.add('collapsed-state');
+        }
+
         // =========================================================================
-        // 8. ENGINE RUNTIME INITIALIZATION
+        // 9. ENGINE RUNTIME INITIALIZATION & FRAME PROFILING
         // =========================================================================
+        let frameTimes = [];
+        const performanceHistoryLimit = 30; // Evaluate performance over a rolling window (~0.5s)
+
+        function checkPerformance() {
+            // Skip assessment if simulation is paused or if only working with minimal bodies
+            if (!STATE.isSimRunning || bodies.length <= 3) {
+                frameTimes = [];
+                return;
+            }
+
+            if (frameTimes.length < performanceHistoryLimit) return;
+            
+            const totalDuration = frameTimes.reduce((acc, curr) => acc + curr, 0);
+            const averageDuration = totalDuration / frameTimes.length;
+            
+            // If processing overhead breaks 14ms (approaching 16.6ms threshold for 60Hz), scale back
+            if (averageDuration > 14) {
+                // Drop the last spawned body to immediately relieve processor stress
+                bodies.pop();
+                
+                // Cap active threshold limit dynamically to prevent cascading drops
+                CONFIG.maxBodies = bodies.length;
+                syncBodySlider();
+                
+                // Visual feedback: Flash body count label red to signify capacity cap trigger
+                UI.labelBodyCount.style.color = "var(--swiss-red)";
+                setTimeout(() => {
+                    UI.labelBodyCount.style.color = "var(--text-secondary)";
+                }, 1000);
+                
+                console.warn(`Adaptive Performance Safeguard: Frame processing time is high (${averageDuration.toFixed(1)}ms). Capping system to ${CONFIG.maxBodies} bodies.`);
+                
+                // Clear active arrays to prevent instant consecutive removals
+                frameTimes = [];
+            }
+        }
+
         function initPhysics() {
             const cx = width / 2;
             const cy = height / 2;
@@ -1177,9 +1691,14 @@
             ];
 
             particles = Array.from({ length: CONFIG.numParticles }, () => new DustParticle());
+            
+            // Align sliders correctly with initialization counts
+            syncBodySlider();
         }
 
         function animate() {
+            const frameStart = performance.now();
+
             ctx.clearRect(0, 0, width, height);
 
             calculateForces();
@@ -1194,6 +1713,16 @@
                 p.draw();
             });
 
+            const frameEnd = performance.now();
+            const processingTime = frameEnd - frameStart;
+            
+            frameTimes.push(processingTime);
+            if (frameTimes.length > performanceHistoryLimit) {
+                frameTimes.shift();
+            }
+
+            checkPerformance();
+
             requestAnimationFrame(animate);
         }
 
@@ -1202,7 +1731,7 @@
         animate();
 
         // =========================================================================
-        // 9. HIGH-FIDELITY AUDIO SYSTEM AND VISUALIZER
+        // 10. HIGH-FIDELITY AUDIO SYSTEM AND VISUALIZER
         // =========================================================================
         (function() {
             const audEl = document.getElementById('audio-element');
