@@ -1,1 +1,3 @@
-# freddycharles.github.io
+# Freddy Charles CV/Portfolio Website
+
+Has some cool simulations
