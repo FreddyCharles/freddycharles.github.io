@@ -8,6 +8,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
     <!-- Separate Stylesheet Link -->
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Collapsible Elements Styling -->
+    <style>
+        .section-sidebar {
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s ease;
+        }
+        .section-sidebar:hover {
+            opacity: 0.8;
+        }
+        .toggle-arrow {
+            display: inline-block;
+            margin-left: 6px;
+            font-size: 0.75rem;
+            transition: transform 0.25s ease;
+            vertical-align: middle;
+        }
+        .section-grid.collapsed .toggle-arrow {
+            transform: rotate(-90deg);
+        }
+        .section-grid.collapsed .section-content {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
 
@@ -158,41 +183,11 @@
             </div>
         </header>
 
-        <!-- SECTION 01: QUALIFICATIONS -->
+        <!-- SECTION 01: EXPERIENCE & PROJECTS -->
         <section class="section-grid">
-            <div class="section-sidebar">
-                <span class="section-num">01 // EDU</span>
-                <h2 class="section-title">Qualifications</h2>
-            </div>
-            <div class="section-content">
-                <div class="item-row">
-                    <div class="item-meta">2022 — 2026</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Mechanical Engineering MEng</h3>
-                        <p class="item-subheading">University of Sheffield</p>
-                        <ul class="details-list">
-                            <li>Focus on multiphysics simulations, finite element analysis, and mechanical design.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="item-row">
-                    <div class="item-meta">2020 — 2022</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">A-Levels & AS-Levels</h3>
-                        <p class="item-subheading">BHASVIC Brighton</p>
-                        <ul class="details-list">
-                            <li>Mathematics, Physics, Chemistry (A-Levels) // Further Mathematics (AS-Level)</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECTION 02: EXPERIENCE -->
-        <section class="section-grid">
-            <div class="section-sidebar">
-                <span class="section-num">02 // EXP</span>
-                <h2 class="section-title">Experience & Projects</h2>
+            <div class="section-sidebar" title="Click to collapse/expand">
+                <span class="section-num">01 // EXP</span>
+                <h2 class="section-title">Experience & Projects <span class="toggle-arrow">▲</span></h2>
             </div>
             <div class="section-content">
                 <div class="item-row">
@@ -261,11 +256,41 @@
             </div>
         </section>
 
+        <!-- SECTION 02: QUALIFICATIONS -->
+        <section class="section-grid">
+            <div class="section-sidebar" title="Click to collapse/expand">
+                <span class="section-num">02 // EDU</span>
+                <h2 class="section-title">Qualifications <span class="toggle-arrow">▲</span></h2>
+            </div>
+            <div class="section-content">
+                <div class="item-row">
+                    <div class="item-meta">2022 — 2026</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Mechanical Engineering MEng</h3>
+                        <p class="item-subheading">University of Sheffield</p>
+                        <ul class="details-list">
+                            <li>Focus on multiphysics simulations, finite element analysis, and mechanical design.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="item-row">
+                    <div class="item-meta">2020 — 2022</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">A-Levels & AS-Levels</h3>
+                        <p class="item-subheading">BHASVIC Brighton</p>
+                        <ul class="details-list">
+                            <li>Mathematics, Physics, Chemistry (A-Levels) // Further Mathematics (AS-Level)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- SECTION 03: SKILLS & LEADERSHIP -->
         <section class="section-grid">
-            <div class="section-sidebar">
+            <div class="section-sidebar" title="Click to collapse/expand">
                 <span class="section-num">03 // SKILLS</span>
-                <h2 class="section-title">Skills & Stack</h2>
+                <h2 class="section-title">Skills & Stack <span class="toggle-arrow">▲</span></h2>
             </div>
             <div class="section-content">
                 <div class="item-row">
@@ -307,5 +332,20 @@
 
     <!-- External 3-Body Physics Engine and Audio Visualizer Script -->
     <script src="script.js" defer></script>
+
+    <!-- Collapsible Section Handler -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const sidebars = document.querySelectorAll(".section-sidebar");
+            sidebars.forEach(sidebar => {
+                sidebar.addEventListener("click", () => {
+                    const grid = sidebar.closest(".section-grid");
+                    if (grid) {
+                        grid.classList.toggle("collapsed");
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
