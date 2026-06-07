@@ -9,7 +9,7 @@
     <!-- Separate Stylesheet Link -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- Collapsible Elements Styling -->
+    <!-- Collapsible Elements & Animation Styling -->
     <style>
         .section-sidebar {
             cursor: pointer;
@@ -21,16 +21,40 @@
         }
         .toggle-arrow {
             display: inline-block;
-            margin-left: 6px;
+            margin-left: 8px;
             font-size: 0.75rem;
-            transition: transform 0.25s ease;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
             vertical-align: middle;
         }
-        .section-grid.collapsed .toggle-arrow {
-            transform: rotate(-90deg);
+        /* Rotates the arrow downward when active */
+        .section-grid.expanded .toggle-arrow {
+            transform: rotate(90deg);
         }
-        .section-grid.collapsed .section-content {
-            display: none !important;
+
+        /* 
+           CSS Grid-based height transition.
+           Transitioning grid-template-rows from 0fr to 1fr enables 
+           a native transition from height 0 to 'auto'.
+        */
+        .section-content-wrapper {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .section-content-wrapper > .section-content {
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Expanded State Styles */
+        .section-grid.expanded .section-content-wrapper {
+            grid-template-rows: 1fr;
+        }
+        .section-grid.expanded .section-content-wrapper > .section-content {
+            opacity: 1;
+            transform: translateY(0);
         }
     </style>
 </head>
@@ -185,72 +209,74 @@
 
         <!-- SECTION 01: EXPERIENCE & PROJECTS -->
         <section class="section-grid">
-            <div class="section-sidebar" title="Click to collapse/expand">
+            <div class="section-sidebar" title="Click to expand">
                 <span class="section-num">01 // EXP</span>
-                <h2 class="section-title">Experience & Projects <span class="toggle-arrow">▲</span></h2>
+                <h2 class="section-title">Experience & Projects <span class="toggle-arrow">▶</span></h2>
             </div>
-            <div class="section-content">
-                <div class="item-row">
-                    <div class="item-meta">SUMMER 2025</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Multiphysics Simulations Engineer</h3>
-                        <p class="item-subheading">Trivista Engineering Ltd.</p>
-                        <ul class="details-list">
-                            <li>Executed structural analysis and fluid dynamics simulations on turbine assemblies.</li>
-                            <li>Conducted seismic calculations and thermal parametric design studies.</li>
-                        </ul>
+            <div class="section-content-wrapper">
+                <div class="section-content">
+                    <div class="item-row">
+                        <div class="item-meta">SUMMER 2025</div>
+                        <div class="item-details">
+                            <h3 class="item-heading">Multiphysics Simulations Engineer</h3>
+                            <p class="item-subheading">Trivista Engineering Ltd.</p>
+                            <ul class="details-list">
+                                <li>Executed structural analysis and fluid dynamics simulations on turbine assemblies.</li>
+                                <li>Conducted seismic calculations and thermal parametric design studies.</li>
+                            </ul>
+                        </div>
                     </div>
-                </div>
-                <div class="item-row">
-                    <div class="item-meta">2025 — 2026</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Final Year Research Project</h3>
-                        <p class="item-subheading">Deformation and Chip Formation in Hot-Forged Ti-6Al-4V</p>
-                        <ul class="details-list">
-                            <li>Designed high-fidelity testing procedures utilizing custom force sensors and high-speed imaging arrays.</li>
-                        </ul>
+                    <div class="item-row">
+                        <div class="item-meta">2025 — 2026</div>
+                        <div class="item-details">
+                            <h3 class="item-heading">Final Year Research Project</h3>
+                            <p class="item-subheading">Deformation and Chip Formation in Hot-Forged Ti-6Al-4V</p>
+                            <ul class="details-list">
+                                <li>Designed high-fidelity testing procedures utilizing custom force sensors and high-speed imaging arrays.</li>
+                            </ul>
+                        </div>
                     </div>
-                </div>
-                <div class="item-row">
-                    <div class="item-meta">SIDE PROJECT</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">High-Energy Physics Simulator</h3>
-                        <p class="item-subheading">JavaScript HTML5 Canvas Engine</p>
-                        <ul class="details-list">
-                            <li>Interactive kinematic simulation mapping Standard Model particle decays and Lorentz forces.</li>
-                            <li><strong><a href="simulator.html" style="color: var(--swiss-red);">LAUNCH SIMULATOR ↗</a></strong></li>
-                        </ul>
+                    <div class="item-row">
+                        <div class="item-meta">SIDE PROJECT</div>
+                        <div class="item-details">
+                            <h3 class="item-heading">High-Energy Physics Simulator</h3>
+                            <p class="item-subheading">JavaScript HTML5 Canvas Engine</p>
+                            <ul class="details-list">
+                                <li>Interactive kinematic simulation mapping Standard Model particle decays and Lorentz forces.</li>
+                                <li><strong><a href="simulator.html" style="color: var(--swiss-red);">LAUNCH SIMULATOR ↗</a></strong></li>
+                            </ul>
+                        </div>
                     </div>
-                </div>
-                <div class="item-row">
-                    <div class="item-meta">SIDE PROJECT</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Live Convergence Laboratory</h3>
-                        <p class="item-subheading">Linear Regression & Gradient Descent Simulator</p>
-                        <ul class="details-list">
-                            <li>Interactive visualizer tracking Mean Squared Error minimization via analytical OLS or iterative Gradient Descent.</li>
-                            <li><strong><a href="linear_regression.html" style="color: var(--swiss-red);">LAUNCH LABORATORY ↗</a></strong></li>
-                        </ul>
+                    <div class="item-row">
+                        <div class="item-meta">SIDE PROJECT</div>
+                        <div class="item-details">
+                            <h3 class="item-heading">Live Convergence Laboratory</h3>
+                            <p class="item-subheading">Linear Regression & Gradient Descent Simulator</p>
+                            <ul class="details-list">
+                                <li>Interactive visualizer tracking Mean Squared Error minimization via analytical OLS or iterative Gradient Descent.</li>
+                                <li><strong><a href="linear_regression.html" style="color: var(--swiss-red);">LAUNCH LABORATORY ↗</a></strong></li>
+                            </ul>
+                        </div>
                     </div>
-                </div>
-                <div class="item-row">
-                    <div class="item-meta">SUMMER 2024</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">SLEDS (Equipment Distribution System)</h3>
-                        <p class="item-subheading">Software Project // UoS Snowsports Club</p>
-                        <ul class="details-list">
-                            <li>Engineered custom SQL database backend integrated with a Python Flask service architecture.</li>
-                        </ul>
+                    <div class="item-row">
+                        <div class="item-meta">SUMMER 2024</div>
+                        <div class="item-details">
+                            <h3 class="item-heading">SLEDS (Equipment Distribution System)</h3>
+                            <p class="item-subheading">Software Project // UoS Snowsports Club</p>
+                            <ul class="details-list">
+                                <li>Engineered custom SQL database backend integrated with a Python Flask service architecture.</li>
+                            </ul>
+                        </div>
                     </div>
-                </div>
-                <div class="item-row">
-                    <div class="item-meta">2023 — PRESENT</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Frame Design Engineer</h3>
-                        <p class="item-subheading">Sheffield Student Downhill Bike Project</p>
-                        <ul class="details-list">
-                            <li>Modelled link mechanisms and structural frames inside Autodesk Fusion 360.</li>
-                        </ul>
+                    <div class="item-row">
+                        <div class="item-meta">2023 — PRESENT</div>
+                        <div class="item-details">
+                            <h3 class="item-heading">Frame Design Engineer</h3>
+                            <p class="item-subheading">Sheffield Student Downhill Bike Project</p>
+                            <ul class="details-list">
+                                <li>Modelled link mechanisms and structural frames inside Autodesk Fusion 360.</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -258,29 +284,31 @@
 
         <!-- SECTION 02: QUALIFICATIONS -->
         <section class="section-grid">
-            <div class="section-sidebar" title="Click to collapse/expand">
+            <div class="section-sidebar" title="Click to expand">
                 <span class="section-num">02 // EDU</span>
-                <h2 class="section-title">Qualifications <span class="toggle-arrow">▲</span></h2>
+                <h2 class="section-title">Qualifications <span class="toggle-arrow">▶</span></h2>
             </div>
-            <div class="section-content">
-                <div class="item-row">
-                    <div class="item-meta">2022 — 2026</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Mechanical Engineering MEng</h3>
-                        <p class="item-subheading">University of Sheffield</p>
-                        <ul class="details-list">
-                            <li>Focus on multiphysics simulations, finite element analysis, and mechanical design.</li>
-                        </ul>
+            <div class="section-content-wrapper">
+                <div class="section-content">
+                    <div class="item-row">
+                        <div class="item-meta">2022 — 2026</div>
+                        <div class="item-details">
+                            <h3 class="item-heading">Mechanical Engineering MEng</h3>
+                            <p class="item-subheading">University of Sheffield</p>
+                            <ul class="details-list">
+                                <li>Focus on multiphysics simulations, finite element analysis, and mechanical design.</li>
+                            </ul>
+                        </div>
                     </div>
-                </div>
-                <div class="item-row">
-                    <div class="item-meta">2020 — 2022</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">A-Levels & AS-Levels</h3>
-                        <p class="item-subheading">BHASVIC Brighton</p>
-                        <ul class="details-list">
-                            <li>Mathematics, Physics, Chemistry (A-Levels) // Further Mathematics (AS-Level)</li>
-                        </ul>
+                    <div class="item-row">
+                        <div class="item-meta">2020 — 2022</div>
+                        <div class="item-details">
+                            <h3 class="item-heading">A-Levels & AS-Levels</h3>
+                            <p class="item-subheading">BHASVIC Brighton</p>
+                            <ul class="details-list">
+                                <li>Mathematics, Physics, Chemistry (A-Levels) // Further Mathematics (AS-Level)</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -288,36 +316,38 @@
 
         <!-- SECTION 03: SKILLS & LEADERSHIP -->
         <section class="section-grid">
-            <div class="section-sidebar" title="Click to collapse/expand">
+            <div class="section-sidebar" title="Click to expand">
                 <span class="section-num">03 // SKILLS</span>
-                <h2 class="section-title">Skills & Stack <span class="toggle-arrow">▲</span></h2>
+                <h2 class="section-title">Skills & Stack <span class="toggle-arrow">▶</span></h2>
             </div>
-            <div class="section-content">
-                <div class="item-row">
-                    <div class="item-meta">COMPUTING & CAD</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Software Stack</h3>
-                        <p class="item-subheading">Simulation, engineering design, and programming languages</p>
-                        <div class="skills-flex">
-                            <span class="skill-tag">MATLAB</span>
-                            <span class="skill-tag">Python (Pandas)</span>
-                            <span class="skill-tag">Ansys</span>
-                            <span class="skill-tag">Autodesk Fusion 360</span>
-                            <span class="skill-tag">AutoCAD</span>
-                            <span class="skill-tag">LaTeX</span>
-                            <span class="skill-tag">HTML5 / CSS3</span>
-                            <span class="skill-tag">JavaScript (ES6)</span>
+            <div class="section-content-wrapper">
+                <div class="section-content">
+                    <div class="item-row">
+                        <div class="item-meta">COMPUTING & CAD</div>
+                        <div class="item-details">
+                            <h3 class="item-heading">Software Stack</h3>
+                            <p class="item-subheading">Simulation, engineering design, and programming languages</p>
+                            <div class="skills-flex">
+                                <span class="skill-tag">MATLAB</span>
+                                <span class="skill-tag">Python (Pandas)</span>
+                                <span class="skill-tag">Ansys</span>
+                                <span class="skill-tag">Autodesk Fusion 360</span>
+                                <span class="skill-tag">AutoCAD</span>
+                                <span class="skill-tag">LaTeX</span>
+                                <span class="skill-tag">HTML5 / CSS3</span>
+                                <span class="skill-tag">JavaScript (ES6)</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="item-row">
-                    <div class="item-meta">LEADERSHIP</div>
-                    <div class="item-details">
-                        <h3 class="item-heading">Design & Kit Secretary</h3>
-                        <p class="item-subheading">University of Sheffield Snowsports Club</p>
-                        <ul class="details-list">
-                            <li>Coordinated product engineering pipelines for custom technical apparel and managed logistics.</li>
-                        </ul>
+                    <div class="item-row">
+                        <div class="item-meta">LEADERSHIP</div>
+                        <div class="item-details">
+                            <h3 class="item-heading">Design & Kit Secretary</h3>
+                            <p class="item-subheading">University of Sheffield Snowsports Club</p>
+                            <ul class="details-list">
+                                <li>Coordinated product engineering pipelines for custom technical apparel and managed logistics.</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -341,7 +371,7 @@
                 sidebar.addEventListener("click", () => {
                     const grid = sidebar.closest(".section-grid");
                     if (grid) {
-                        grid.classList.toggle("collapsed");
+                        grid.classList.toggle("expanded");
                     }
                 });
             });
