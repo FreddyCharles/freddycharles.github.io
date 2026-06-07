@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regression Analysis — Live Convergence Laboratory</title>
+    <!-- Design System Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Link to the styled CSS -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Small styling overrides & layout adjustments for select box alignment */
+        select:hover {
+            border-color: var(--swiss-red) !important;
+        }
+        .dimmed {
+            opacity: 0.3;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PHYSICS INTERACTIVE OVERLAY -->
+    <div id="canvas-container">
+        <!-- Re-purposing canvas from style.css layout -->
+        <canvas id="three-body-canvas"></canvas>
+    </div>
+
+    <!-- TELEMETRY BANNER STRIP (Formatted after .audio-strip) -->
+    <div class="audio-strip">
+        <div class="audio-section">
+            <div class="audio-meta">
+                <span class="audio-signal-light" id="engine-status-light"></span>
+                <span class="audio-title-text" id="engine-title-label">ENGINE: GRADIENT DESCENT</span>
+            </div>
+        </div>
+        <div class="audio-section" style="flex: 2;">
+            <div class="audio-controls">
+                <button class="audio-btn" id="btn-play-pause">
+                    <span id="play-pause-text">PAUSE</span>
+                </button>
+                <button class="audio-btn" id="btn-step">STEP</button>
+                <button class="audio-btn" id="btn-reset">RESET</button>
+                
+                <div class="audio-progress-container">
+                    <div class="audio-timeline" id="epoch-timeline">
+                        <div class="audio-playhead" id="epoch-playhead"></div>
+                    </div>
+                    <span class="audio-time" id="telemetry-epoch">EPOCH: 0/1000</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Live Loss History Canvas Mapping the Waveform Container -->
+        <div class="audio-waveform-container" title="Real-time Mean Squared Error Curve">
+            <canvas id="audio-visualizer"></canvas>
+        </div>
+        
+        <!-- Learning Rate Modifier Slider -->
+        <div class="audio-volume-container" id="lr-container">
+            <span class="volume-icon" style="font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700;">LR</span>
+            <input type="range" min="0.005" max="0.3" step="0.005" value="0.08" class="volume-slider" id="lr-slider">
+            <span id="lr-value" style="font-family: var(--font-mono); font-size: 0.75rem; min-width: 40px; color: var(--text-secondary);">0.080</span>
+        </div>
+    </div>
+
+    <!-- HIGH-FIDELITY COMPACT SIM CONTROL PANEL -->
+    <div class="sim-control-panel">
+        <div class="sim-panel-header">
+            <span class="panel-title">CONTROL GRID</span>
+            <div class="header-actions">
+                <button class="header-icon-btn" id="panel-settings-btn" title="Toggle Configuration Options">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                    </svg>
+                </button>
+                <button class="header-icon-btn" id="panel-collapse-btn" title="Collapse Control HUD">
+                    <span id="collapse-arrow">▲</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="sim-panel-body" id="panel-body">
+            <!-- 4-Button Grid Layout mapping standard class -->
+            <div class="control-row">
+                <button class="sim-control-btn active-state" id="ctrl-btn-gd" title="Optimization: Gradient Descent">
+                    <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">GD</span>
+                </button>
+                <button class="sim-control-btn" id="ctrl-btn-ols" title="Optimization: Ordinary Least Squares (Closed-Form)">
+                    <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">OLS</span>
+                </button>
+                <button class="sim-control-btn" id="ctrl-btn-draw" title="Draw Mode: Custom Point Injection">
+                    <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">DRAW</span>
+                </button>
+                <button class="sim-control-btn" id="ctrl-btn-outlier" title="Inject Heavy Regression Outlier">
+                    <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">+OUT</span>
+                </button>
+            </div>
+
+            <!-- Configuration Parameters Drawer -->
+            <div class="sim-settings-drawer" id="settings-drawer">
+                <div class="sim-param-group">
+                    <div class="sim-param-label">
+                        <span>Dataset Pattern</span>
+                        <span id="label-pattern">LINEAR</span>
+                    </div>
+                    <select id="dataset-select" style="background: rgba(8,8,10,0.95); color: var(--text-primary); border: 1px solid var(--border-color); font-family: var(--font-mono); font-size: 0.75rem; padding: 0.3rem; outline: none; margin-top: 0.15rem; cursor: pointer;">
+                        <option value="linear">Linear Distribution</option>
+                        <option value="quadratic">Quadratic Curve</option>
+                        <option value="exponential">Exponential Growth</option>
+                        <option value="random">Uncorrelated Random Noise</option>
+                        <option value="outliers">Structured Outlier Set</option>
+                    </select>
+                </div>
+
+                <div class="sim-param-group">
+                    <div class="sim-param-label">
+                        <span>Sample Size (N)</span>
+                        <span id="label-n-val">50</span>
+                    </div>
+                    <input type="range" min="10" max="250" step="5" value="50" class="sim-slider" id="slider-n">
+                </div>
+
+                <div class="sim-param-group">
+                    <div class="sim-param-label">
+                        <span>Dispersion (Noise)</span>
+                        <span id="label-noise-val">12%</span>
+                    </div>
+                    <input type="range" min="0" max="40" step="1" value="12" class="sim-slider" id="slider-noise">
+                </div>
+
+                <div class="sim-param-group" id="speed-container">
+                    <div class="sim-param-label">
+                        <span>Compute Speed</span>
+                        <span id="label-speed-val">1x</span>
+                    </div>
+                    <input type="range" min="1" max="15" step="1" value="1" class="sim-slider" id="slider-speed">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDITORIAL SWISS LAYOUT WRAPPER -->
+    <div class="wrapper">
+        <header>
+            <div class="header-title-box">
+                <h1>REGRESSION <span class="accent-bullet">■</span> ANALYSIS</h1>
+                <div class="intro-text">
+                    A real-time laboratory mapping statistical convergence. Observe how analytical models instantly resolve global minima, or track the step-by-step optimization path of Gradient Descent as it minimizes Mean Squared Error.
+                </div>
+            </div>
+            <div class="header-meta-box">
+                <div>
+                    <div class="contact-header">SYSTEM METRICS</div>
+                    <div id="meta-engine-mode">MODE: Gradient Descent</div>
+                    <div id="meta-loss">LOSS (MSE): 0.000000</div>
+                    <div id="meta-equation" style="color: var(--swiss-red); font-weight: 700;">f(x) = 0.00x + 0.00</div>
+                </div>
+                <div style="margin-top: 1.5rem; line-height: 1.4;">
+                    <span class="accent-bullet">■</span> Workspace Overlay Enabled.<br>
+                    Toggle <strong style="color: var(--text-primary);">DRAW</strong> in the menu to plot coordinates manually directly onto the grid.
+                </div>
+            </div>
+        </header>
+
+        <!-- SECTION 1: THEORETICAL BASIS -->
+        <div class="section-grid">
+            <div class="section-sidebar">
+                <span class="section-num">01 / MATH</span>
+                <h2 class="section-title">THE OBJECTIVE</h2>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 1rem; font-family: var(--font-mono); line-height: 1.5;">
+                    Linear regression aims to map the relationships within a set of data by fitting a straight line to the collected data points.
+                </p>
+            </div>
+            <div class="section-content">
+                <div class="item-row">
+                    <div class="item-meta">01.1 / COST FUNCTION</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Mean Squared Error</h3>
+                        <div class="item-subheading">Mathematical Formulation</div>
+                        <ul class="details-list">
+                            <li>Quantifies prediction error by calculating the average squared variance between coordinates and the trendline.</li>
+                            <li>The mathematical definition: <span style="font-family: var(--font-mono); color: var(--text-primary);">J(m, c) = (1/2N) &Sigma; ( (m x_i + c) - y_i )²</span>.</li>
+                            <li>Lower loss values represent heightened line accuracy.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="item-row">
+                    <div class="item-meta">01.2 / INTERACTION</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Interactive Controls</h3>
+                        <div class="item-subheading">Manipulate parameters in real-time</div>
+                        <div class="skills-flex">
+                            <span class="skill-tag">GRADIENT DESCENT (GD)</span>
+                            <span class="skill-tag">ORDINARY LEAST SQUARES (OLS)</span>
+                            <span class="skill-tag">CUSTOM COORDINATE INJECTION</span>
+                            <span class="skill-tag">OUTLIER TESTING</span>
+                            <span class="skill-tag">NOISE MULTIPLIERS</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: ALGORITHM ANALYSIS -->
+        <div class="section-grid" style="border-bottom: none;">
+            <div class="section-sidebar">
+                <span class="section-num">02 / CORE</span>
+                <h2 class="section-title">ENGINE STACK</h2>
+            </div>
+            <div class="section-content">
+                <div class="item-row">
+                    <div class="item-meta">GRADIENT DESCENT</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Iterative Optimization</h3>
+                        <div class="item-subheading">Step-by-Step Convergence</div>
+                        <ul class="details-list">
+                            <li>Takes steps proportional to the negative gradient of the loss function to reach local or global minima.</li>
+                            <li>Allows scaling when processing billions of multi-dimensional parameters where matrix inversions are impossible.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="item-row">
+                    <div class="item-meta">CLOSED FORM</div>
+                    <div class="item-details">
+                        <h3 class="item-heading">Ordinary Least Squares</h3>
+                        <div class="item-subheading">Direct Analytical Resolution</div>
+                        <ul class="details-list">
+                            <li>Calculates optimal parameters instantaneously utilizing traditional closed-form covariance formulations.</li>
+                            <li>Highly performant for low-dimensional vectors but scales poorly in complexity during extensive matrix transitions.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div>SYSTEM ARCHITECTURE: PURE CSS SWISS GRID</div>
+            <div>RENDER ENGINE: CANVAS 2D CONTEXT</div>
+            <div>© 2026 REGRESSION METRICS INC.</div>
+        </footer>
+    </div>
+
+    <!-- REAL-TIME INTERACTIVE SCRIPTING -->
+    <script>
+        // --- DATASET & MODEL PARAMETERS ---
+        let points = [];
+        let currentM = 0;
+        let currentC = 0.5;
+        let lossHistory = [];
+        let isPaused = false;
+        let mode = 'gd'; // 'gd' or 'ols'
+        let isDrawMode = false;
+        
+        // GD Variables
+        let epoch = 0;
+        const maxEpochs = 600;
+        let lr = 0.08;
+        let noise = 12;
+        let sampleCount = 50;
+        let simSpeed = 1;
+        let datasetPattern = 'linear';
+
+        // Viewport bounds mapping normalized [0,1] space to Canvas coordinates
+        let viewportBox = { x: 0, y: 0, w: 0, h: 0 };
+
+        // --- DOM REFERENCE NODE ACCESSORS ---
+        const canvas = document.getElementById('three-body-canvas');
+        const ctx = canvas.getContext('2d');
+        const visualizerCanvas = document.getElementById('audio-visualizer');
+        const visualizerCtx = visualizerCanvas.getContext('2d');
+
+        const btnPlayPause = document.getElementById('btn-play-pause');
+        const playPauseText = document.getElementById('play-pause-text');
+        const btnStep = document.getElementById('btn-step');
+        const btnReset = document.getElementById('btn-reset');
+        const epochPlayhead = document.getElementById('epoch-playhead');
+        const telemetryEpoch = document.getElementById('telemetry-epoch');
+        const statusLight = document.getElementById('engine-status-light');
+        const engineTitleLabel = document.getElementById('engine-title-label');
+
+        const btnGD = document.getElementById('ctrl-btn-gd');
+        const btnOLS = document.getElementById('ctrl-btn-ols');
+        const btnDraw = document.getElementById('ctrl-btn-draw');
+        const btnOutlier = document.getElementById('ctrl-btn-outlier');
+
+        const settingsBtn = document.getElementById('panel-settings-btn');
+        const settingsDrawer = document.getElementById('settings-drawer');
+        const collapseBtn = document.getElementById('panel-collapse-btn');
+        const collapseArrow = document.getElementById('collapse-arrow');
+        const panelBody = document.getElementById('panel-body');
+
+        const selectDataset = document.getElementById('dataset-select');
+        const sliderN = document.getElementById('slider-n');
+        const sliderNoise = document.getElementById('slider-noise');
+        const sliderSpeed = document.getElementById('slider-speed');
+        const sliderLR = document.getElementById('lr-slider');
+
+        const labelPattern = document.getElementById('label-pattern');
+        const labelNVal = document.getElementById('label-n-val');
+        const labelNoiseVal = document.getElementById('label-noise-val');
+        const labelSpeedVal = document.getElementById('label-speed-val');
+        const labelLRVal = document.getElementById('lr-value');
+
+        const metaEngineMode = document.getElementById('meta-engine-mode');
+        const metaLoss = document.getElementById('meta-loss');
+        const metaEquation = document.getElementById('meta-equation');
+
+        // --- INTERACTIVE SYSTEM EVENT INITIALIZATION ---
+        function initEvents() {
+            // Panel Collapse / Expand
+            collapseBtn.addEventListener('click', () => {
+                panelBody.classList.toggle('collapsed');
+                collapseArrow.textContent = panelBody.classList.contains('collapsed') ? '▼' : '▲';
+            });
+
+            settingsBtn.addEventListener('click', () => {
+                settingsDrawer.classList.toggle('open');
+                settingsBtn.classList.toggle('active-state');
+            });
+
+            // Playback controls
+            btnPlayPause.addEventListener('click', () => {
+                isPaused = !isPaused;
+                playPauseText.textContent = isPaused ? 'PLAY' : 'PAUSE';
+                if (isPaused) {
+                    statusLight.classList.add('paused');
+                } else {
+                    statusLight.classList.remove('paused');
+                }
+            });
+
+            btnStep.addEventListener('click', () => {
+                isPaused = true;
+                playPauseText.textContent = 'PLAY';
+                statusLight.classList.add('paused');
+                
+                if (mode === 'gd') {
+                    if (epoch < maxEpochs) {
+                        const loss = runGradientDescentStep();
+                        lossHistory.push(loss);
+                        epoch++;
+                    }
+                } else {
+                    runAnalyticalStep();
+                }
+            });
+
+            btnReset.addEventListener('click', () => {
+                generateDataset();
+            });
+
+            // Model / Draw Selection
+            btnGD.addEventListener('click', () => {
+                setEngineMode('gd');
+            });
+
+            btnOLS.addEventListener('click', () => {
+                setEngineMode('ols');
+            });
+
+            btnDraw.addEventListener('click', () => {
+                isDrawMode = !isDrawMode;
+                btnDraw.classList.toggle('active-state', isDrawMode);
+                document.getElementById('canvas-container').style.pointerEvents = isDrawMode ? 'auto' : 'none';
+            });
+
+            btnOutlier.addEventListener('click', () => {
+                injectOutlier();
+            });
+
+            // Sliders & Configuration Controls
+            selectDataset.addEventListener('change', (e) => {
+                datasetPattern = e.target.value;
+                labelPattern.textContent = datasetPattern.toUpperCase();
+                generateDataset();
+            });
+
+            sliderN.addEventListener('input', (e) => {
+                sampleCount = parseInt(e.target.value);
+                labelNVal.textContent = sampleCount;
+                generateDataset();
+            });
+
+            sliderNoise.addEventListener('input', (e) => {
+                noise = parseInt(e.target.value);
+                labelNoiseVal.textContent = noise + '%';
+                generateDataset();
+            });
+
+            sliderSpeed.addEventListener('input', (e) => {
+                simSpeed = parseInt(e.target.value);
+                labelSpeedVal.textContent = simSpeed + 'x';
+            });
+
+            sliderLR.addEventListener('input', (e) => {
+                lr = parseFloat(e.target.value);
+                labelLRVal.textContent = lr.toFixed(3);
+            });
+
+            // Canvas coordinate mapping intercept
+            canvas.addEventListener('click', (e) => {
+                if (!isDrawMode) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+
+                // Validate boundaries
+                if (clickX >= viewportBox.x && clickX <= viewportBox.x + viewportBox.w &&
+                    clickY >= viewportBox.y && clickY <= viewportBox.y + viewportBox.h) {
+                    
+                    const normX = (clickX - viewportBox.x) / viewportBox.w;
+                    const normY = 1.0 - (clickY - viewportBox.y) / viewportBox.h;
+
+                    points.push({ x: normX, y: normY });
+                    
+                    if (mode === 'gd') {
+                        epoch = 0;
+                        lossHistory = [];
+                    }
+                }
+            });
+
+            // Handle responsive layouts
+            window.addEventListener('resize', handleResize);
+        }
+
+        function setEngineMode(targetMode) {
+            mode = targetMode;
+            btnGD.classList.toggle('active-state', mode === 'gd');
+            btnOLS.classList.toggle('active-state', mode === 'ols');
+            engineTitleLabel.textContent = `ENGINE: ${mode === 'gd' ? 'GRADIENT DESCENT' : 'OLS ANALYTICAL'}`;
+            metaEngineMode.textContent = `MODE: ${mode === 'gd' ? 'Gradient Descent' : 'OLS Analytical'}`;
+
+            const speedContainer = document.getElementById('speed-container');
+            const lrContainer = document.getElementById('lr-container');
+            if (mode === 'ols') {
+                speedContainer.classList.add('dimmed');
+                lrContainer.classList.add('dimmed');
+            } else {
+                speedContainer.classList.remove('dimmed');
+                lrContainer.classList.remove('dimmed');
+                epoch = 0;
+                lossHistory = [];
+                currentM = 0;
+                currentC = 0.5;
+            }
+        }
+
+        // --- MATHEMATICAL RESOLUTIONS ---
+        function calculateMSE() {
+            if (points.length === 0) return 0;
+            let sumSquaredError = 0;
+            for (let i = 0; i < points.length; i++) {
+                const prediction = currentM * points[i].x + currentC;
+                const error = prediction - points[i].y;
+                sumSquaredError += error * error;
+            }
+            return sumSquaredError / (2 * points.length);
+        }
+
+        function runGradientDescentStep() {
+            if (points.length === 0) return 0;
+            let mGradient = 0;
+            let cGradient = 0;
+            const N = points.length;
+
+            for (let i = 0; i < N; i++) {
+                const prediction = currentM * points[i].x + currentC;
+                const error = prediction - points[i].y;
+                mGradient += error * points[i].x;
+                cGradient += error;
+            }
+
+            currentM -= lr * (mGradient / N);
+            currentC -= lr * (cGradient / N);
+
+            return calculateMSE();
+        }
+
+        function solveAnalyticalOLS() {
+            if (points.length === 0) return { m: 0, c: 0.5 };
+            let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0;
+            const N = points.length;
+
+            for (let i = 0; i < N; i++) {
+                sumX += points[i].x;
+                sumY += points[i].y;
+                sumXX += points[i].x * points[i].x;
+                sumXY += points[i].x * points[i].y;
+            }
+
+            const meanX = sumX / N;
+            const meanY = sumY / N;
+
+            let numerator = 0;
+            let denominator = 0;
+            for (let i = 0; i < N; i++) {
+                numerator += (points[i].x - meanX) * (points[i].y - meanY);
+                denominator += (points[i].x - meanX) * (points[i].x - meanX);
+            }
+
+            const m = denominator === 0 ? 0 : numerator / denominator;
+            const c = meanY - m * meanX;
+            return { m, c };
+        }
+
+        function runAnalyticalStep() {
+            const solution = solveAnalyticalOLS();
+            // Smoothly slide intercept and slope parameters to lock targets smoothly
+            currentM += (solution.m - currentM) * 0.15;
+            currentC += (solution.c - currentC) * 0.15;
+            epoch = maxEpochs;
+            return calculateMSE();
+        }
+
+        // --- DATA GENERATORS ---
+        function generateDataset() {
+            points = [];
+            epoch = 0;
+            lossHistory = [];
+            currentM = 0;
+            currentC = 0.5;
+
+            const noiseFactor = noise / 100;
+
+            if (datasetPattern === 'linear') {
+                const targetM = (Math.random() * 1.0 - 0.5); 
+                const targetC = (Math.random() * 0.3 + 0.35); 
+                for (let i = 0; i < sampleCount; i++) {
+                    const x = i / (sampleCount - 1 || 1) * 0.9 + 0.05;
+                    const randomNoise = (Math.random() * 2 - 1) * noiseFactor * 0.5;
+                    let y = targetM * (x - 0.5) + targetC + randomNoise;
+                    y = Math.max(0, Math.min(1, y));
+                    points.push({ x, y });
+                }
+            } else if (datasetPattern === 'quadratic') {
+                const direction = Math.random() > 0.5 ? 1 : -1;
+                const vertexH = direction * (Math.random() * 0.5 + 0.4); 
+                for (let i = 0; i < sampleCount; i++) {
+                    const x = i / (sampleCount - 1 || 1) * 0.9 + 0.05;
+                    const randomNoise = (Math.random() * 2 - 1) * noiseFactor * 0.3;
+                    let y = vertexH * (x - 0.5) * (x - 0.5) + 0.5 + randomNoise;
+                    y = Math.max(0, Math.min(1, y));
+                    points.push({ x, y });
+                }
+            } else if (datasetPattern === 'exponential') {
+                for (let i = 0; i < sampleCount; i++) {
+                    const x = i / (sampleCount - 1 || 1) * 0.9 + 0.05;
+                    const randomNoise = (Math.random() * 2 - 1) * noiseFactor * 0.3;
+                    let y = 0.15 + 0.7 * Math.pow(x, 2.8) + randomNoise;
+                    y = Math.max(0, Math.min(1, y));
+                    points.push({ x, y });
+                }
+            } else if (datasetPattern === 'random') {
+                for (let i = 0; i < sampleCount; i++) {
+                    points.push({
+                        x: 0.1 + Math.random() * 0.8,
+                        y: 0.1 + Math.random() * 0.8
+                    });
+                }
+            } else if (datasetPattern === 'outliers') {
+                const targetM = 0.4;
+                const targetC = 0.3;
+                for (let i = 0; i < sampleCount; i++) {
+                    const x = i / (sampleCount - 1 || 1) * 0.9 + 0.05;
+                    const cleanNoise = (Math.random() * 2 - 1) * 0.03;
+                    let y = targetM * (x - 0.5) + targetC + cleanNoise;
+
+                    // Make roughly 8% of coordinate structures extreme values
+                    if (Math.random() < 0.08) {
+                        y = Math.random() > 0.5 ? 0.9 : 0.1;
+                    }
+                    y = Math.max(0, Math.min(1, y));
+                    points.push({ x, y });
+                }
+            }
+        }
+
+        function injectOutlier() {
+            const outlierX = Math.random() > 0.5 ? 0.95 : 0.05;
+            const outlierY = outlierX > 0.5 ? 0.05 : 0.95;
+            points.push({ x: outlierX, y: outlierY });
+
+            if (mode === 'gd') {
+                epoch = 0;
+                lossHistory = [];
+            }
+        }
+
+        // --- LAYOUT ENGINE SCALING ---
+        function handleResize() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            const w = rect.width;
+            const h = rect.height;
+
+            if (w > 992) {
+                // Large displays: Position coordinate box on the right hand side of the canvas
+                const size = Math.min(w * 0.38, h * 0.55, 450);
+                viewportBox.w = size;
+                viewportBox.h = size;
+                viewportBox.x = w * 0.55 + (w * 0.38 - size) / 2;
+                viewportBox.y = h * 0.25 + (h * 0.55 - size) / 2;
+            } else {
+                // Tablet/Mobile displays: Center box lower on the page
+                const size = Math.min(w * 0.82, h * 0.35, 300);
+                viewportBox.w = size;
+                viewportBox.h = size;
+                viewportBox.x = (w - size) / 2;
+                viewportBox.y = h * 0.45;
+            }
+        }
+
+        // --- GRAPHICS RENDERING SYSTEM ---
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Back grid frame design
+            ctx.fillStyle = 'rgba(8, 8, 10, 0.4)';
+            ctx.fillRect(viewportBox.x, viewportBox.y, viewportBox.w, viewportBox.h);
+
+            ctx.strokeStyle = '#1e1e21';
+            ctx.lineWidth = 1;
+            const ticks = 10;
+            for (let i = 1; i < ticks; i++) {
+                // Vertical grid ticks
+                const gx = viewportBox.x + (viewportBox.w / ticks) * i;
+                ctx.beginPath();
+                ctx.moveTo(gx, viewportBox.y);
+                ctx.lineTo(gx, viewportBox.y + viewportBox.h);
+                ctx.stroke();
+
+                // Horizontal grid ticks
+                const gy = viewportBox.y + (viewportBox.h / ticks) * i;
+                ctx.beginPath();
+                ctx.moveTo(viewportBox.x, gy);
+                ctx.lineTo(viewportBox.x + viewportBox.w, gy);
+                ctx.stroke();
+            }
+
+            // Outline solid borders
+            ctx.strokeStyle = '#242426';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(viewportBox.x, viewportBox.y, viewportBox.w, viewportBox.h);
+
+            // Coordinates Metric Labels
+            ctx.fillStyle = '#8e8e93';
+            ctx.font = '9px "JetBrains Mono", monospace';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+
+            // Y Axis coordinates indicators
+            for (let i = 0; i <= 4; i++) {
+                const labelVal = (i / 4).toFixed(2);
+                const gy = viewportBox.y + viewportBox.h - (viewportBox.h / 4) * i;
+                ctx.fillText(labelVal, viewportBox.x - 10, gy);
+
+                ctx.beginPath();
+                ctx.moveTo(viewportBox.x - 4, gy);
+                ctx.lineTo(viewportBox.x, gy);
+                ctx.strokeStyle = '#444';
+                ctx.stroke();
+            }
+
+            // X Axis coordinates indicators
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            for (let i = 0; i <= 4; i++) {
+                const labelVal = (i / 4).toFixed(2);
+                const gx = viewportBox.x + (viewportBox.w / 4) * i;
+                ctx.fillText(labelVal, gx, viewportBox.y + viewportBox.h + 8);
+
+                ctx.beginPath();
+                ctx.moveTo(gx, viewportBox.y + viewportBox.h);
+                ctx.lineTo(gx, viewportBox.y + viewportBox.h + 4);
+                ctx.strokeStyle = '#444';
+                ctx.stroke();
+            }
+
+            // Labels Titles
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '700 8px "JetBrains Mono", monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText('Y (TARGET OUTPUT)', viewportBox.x, viewportBox.y - 12);
+            ctx.textAlign = 'right';
+            ctx.fillText('X (INPUT FEATURE)', viewportBox.x + viewportBox.w, viewportBox.y + viewportBox.h + 24);
+
+            // Draw active regression elements
+            for (let i = 0; i < points.length; i++) {
+                const px = viewportBox.x + points[i].x * viewportBox.w;
+                const py = viewportBox.y + (1.0 - points[i].y) * viewportBox.h;
+
+                // Sharp square points for Swiss aesthetic
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(px - 3, py - 3, 6, 6);
+                ctx.strokeStyle = '#08080a';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(px - 3, py - 3, 6, 6);
+            }
+
+            // Map trendline
+            const yStart = currentM * 0 + currentC;
+            const yEnd = currentM * 1 + currentC;
+
+            const syStart = viewportBox.y + (1.0 - yStart) * viewportBox.h;
+            const syEnd = viewportBox.y + (1.0 - yEnd) * viewportBox.h;
+
+            // Highlight line vector mapping
+            ctx.strokeStyle = 'rgba(255, 59, 48, 0.15)';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(viewportBox.x, syStart);
+            ctx.lineTo(viewportBox.x + viewportBox.w, syEnd);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#ff3b30'; // Swiss Red Accents
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(viewportBox.x, syStart);
+            ctx.lineTo(viewportBox.x + viewportBox.w, syEnd);
+            ctx.stroke();
+
+            // Overlay equation context text
+            const textY = viewportBox.y + (1.0 - (currentM * 0.5 + currentC)) * viewportBox.h;
+            ctx.fillStyle = '#ff3b30';
+            ctx.font = '700 8px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`y = ${currentM.toFixed(3)}x + ${currentC.toFixed(3)}`, viewportBox.x + viewportBox.w / 2, textY - 10);
+        }
+
+        function renderLossHistory() {
+            const w = visualizerCanvas.width = visualizerCanvas.parentElement.clientWidth;
+            const h = visualizerCanvas.height = visualizerCanvas.parentElement.clientHeight || 36;
+            
+            visualizerCtx.clearRect(0, 0, w, h);
+
+            if (lossHistory.length < 2) {
+                // Static indicator line
+                visualizerCtx.strokeStyle = '#242426';
+                visualizerCtx.lineWidth = 1;
+                visualizerCtx.beginPath();
+                visualizerCtx.moveTo(0, h / 2);
+                visualizerCtx.lineTo(w, h / 2);
+                visualizerCtx.stroke();
+                return;
+            }
+
+            // Draw clean structured grids behind gradient curves
+            visualizerCtx.strokeStyle = '#141416';
+            visualizerCtx.lineWidth = 1;
+            for (let i = 1; i < 4; i++) {
+                visualizerCtx.beginPath();
+                visualizerCtx.moveTo(0, (h / 4) * i);
+                visualizerCtx.lineTo(w, (h / 4) * i);
+                visualizerCtx.stroke();
+            }
+
+            // Trace loss trajectory
+            visualizerCtx.beginPath();
+            const maxVal = Math.max(...lossHistory);
+            const scaleY = maxVal === 0 ? 1 : maxVal;
+
+            for (let i = 0; i < lossHistory.length; i++) {
+                const x = (i / (lossHistory.length - 1)) * w;
+                const y = h - 2 - (lossHistory[i] / scaleY) * (h - 6);
+                if (i === 0) visualizerCtx.moveTo(x, y);
+                else visualizerCtx.lineTo(x, y);
+            }
+
+            visualizerCtx.strokeStyle = '#ff3b30';
+            visualizerCtx.lineWidth = 1.5;
+            visualizerCtx.stroke();
+
+            // Closed gradient fill
+            visualizerCtx.lineTo(w, h);
+            visualizerCtx.lineTo(0, h);
+            visualizerCtx.closePath();
+            visualizerCtx.fillStyle = 'rgba(255, 59, 48, 0.08)';
+            visualizerCtx.fill();
+        }
+
+        // --- ANIMATION CONTROLLER ---
+        function loop() {
+            if (!isPaused && points.length > 0) {
+                if (mode === 'gd') {
+                    for (let i = 0; i < simSpeed; i++) {
+                        if (epoch < maxEpochs) {
+                            const loss = runGradientDescentStep();
+                            lossHistory.push(loss);
+                            // Sliding telemetry window threshold
+                            if (lossHistory.length > wThreshold()) lossHistory.shift();
+                            epoch++;
+                        }
+                    }
+                } else {
+                    const loss = runAnalyticalStep();
+                    lossHistory.push(loss);
+                    if (lossHistory.length > wThreshold()) lossHistory.shift();
+                }
+            }
+
+            // Dynamic HUD calculations
+            const currentMSE = calculateMSE();
+            metaLoss.textContent = `LOSS (MSE): ${currentMSE.toFixed(6)}`;
+            metaEquation.textContent = `f(x) = ${currentM.toFixed(3)}x + ${currentC.toFixed(3)}`;
+
+            telemetryEpoch.textContent = `EPOCH: ${epoch}/${maxEpochs}`;
+            const percentageProgress = (epoch / maxEpochs) * 100;
+            epochPlayhead.style.width = `${percentageProgress}%`;
+
+            render();
+            renderLossHistory();
+
+            requestAnimationFrame(loop);
+        }
+
+        function wThreshold() {
+            return visualizerCanvas.width ? Math.floor(visualizerCanvas.width) : 300;
+        }
+
+        // --- RUN SYSTEM ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initEvents();
+            handleResize();
+            generateDataset();
+            requestAnimationFrame(loop);
+        });
+    </script>
+</body>
+</html>
