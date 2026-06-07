@@ -11,7 +11,33 @@
     <!-- Link to the styled CSS -->
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Small styling overrides & layout adjustments for select box alignment */
+        /* CSS overrides for background canvas layer and interaction layout structure */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1; 
+            pointer-events: none; /* Allows pointer clicks to pass through to the window processor */
+        }
+        #three-body-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            filter: none !important; /* Forces override of portfolio blur filters */
+            backdrop-filter: none !important;
+            opacity: 1 !important;
+        }
+        .wrapper {
+            position: relative;
+            z-index: 2; 
+            pointer-events: auto;
+        }
+        .back-link:hover {
+            opacity: 0.8;
+            border-bottom: 1px solid var(--swiss-red);
+        }
         select:hover {
             border-color: var(--swiss-red) !important;
         }
@@ -26,11 +52,10 @@
 
     <!-- PHYSICS INTERACTIVE OVERLAY -->
     <div id="canvas-container">
-        <!-- Re-purposing canvas from style.css layout -->
         <canvas id="three-body-canvas"></canvas>
     </div>
 
-    <!-- TELEMETRY BANNER STRIP (Formatted after .audio-strip) -->
+    <!-- TELEMETRY BANNER STRIP -->
     <div class="audio-strip">
         <div class="audio-section">
             <div class="audio-meta">
@@ -55,7 +80,7 @@
             </div>
         </div>
         
-        <!-- Live Loss History Canvas Mapping the Waveform Container -->
+        <!-- Live Loss History Canvas Mapping -->
         <div class="audio-waveform-container" title="Real-time Mean Squared Error Curve">
             <canvas id="audio-visualizer"></canvas>
         </div>
@@ -85,7 +110,6 @@
         </div>
         
         <div class="sim-panel-body" id="panel-body">
-            <!-- 4-Button Grid Layout mapping standard class -->
             <div class="control-row">
                 <button class="sim-control-btn active-state" id="ctrl-btn-gd" title="Optimization: Gradient Descent">
                     <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">GD</span>
@@ -148,6 +172,9 @@
     <div class="wrapper">
         <header>
             <div class="header-title-box">
+                <div style="margin-bottom: 1.5rem;">
+                    <a href="index.html" class="back-link" style="display: inline-block; text-decoration: none; color: var(--swiss-red); font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; transition: opacity 0.2s;">&larr; BACK TO PORTFOLIO</a>
+                </div>
                 <h1>REGRESSION <span class="accent-bullet">■</span> ANALYSIS</h1>
                 <div class="intro-text">
                     A real-time laboratory mapping statistical convergence. Observe how analytical models instantly resolve global minima, or track the step-by-step optimization path of Gradient Descent as it minimizes Mean Squared Error.
@@ -366,7 +393,6 @@
             btnDraw.addEventListener('click', () => {
                 isDrawMode = !isDrawMode;
                 btnDraw.classList.toggle('active-state', isDrawMode);
-                document.getElementById('canvas-container').style.pointerEvents = isDrawMode ? 'auto' : 'none';
             });
 
             btnOutlier.addEventListener('click', () => {
@@ -400,17 +426,32 @@
             sliderLR.addEventListener('input', (e) => {
                 lr = parseFloat(e.target.value);
                 labelLRVal.textContent = lr.toFixed(3);
+                // Dynamically reset the optimizer when learning rate shifts
+                if (mode === 'gd') {
+                    epoch = 0;
+                    lossHistory = [];
+                }
             });
 
-            // Canvas coordinate mapping intercept
-            canvas.addEventListener('click', (e) => {
+            // Global click processor mapping layout intercepts to the grid coordinates
+            window.addEventListener('click', (e) => {
                 if (!isDrawMode) return;
+
+                // Stop inputs if clicking inside dashboard UI blocks
+                if (e.target.closest('.sim-control-panel') || 
+                    e.target.closest('.audio-strip') || 
+                    e.target.closest('a') || 
+                    e.target.closest('button') || 
+                    e.target.closest('select') || 
+                    e.target.closest('input')) {
+                    return;
+                }
 
                 const rect = canvas.getBoundingClientRect();
                 const clickX = e.clientX - rect.left;
                 const clickY = e.clientY - rect.top;
 
-                // Validate boundaries
+                // Validate boundaries of the layout coordinate box
                 if (clickX >= viewportBox.x && clickX <= viewportBox.x + viewportBox.w &&
                     clickY >= viewportBox.y && clickY <= viewportBox.y + viewportBox.h) {
                     
@@ -619,14 +660,22 @@
                 viewportBox.x = (w - size) / 2;
                 viewportBox.y = h * 0.45;
             }
+
+            // Cleanly resize the loss visualizer canvas here to prevent frame-rate layout thrashing
+            const visRect = visualizerCanvas.parentElement.getBoundingClientRect();
+            const visW = visRect.width || 300;
+            const visH = visRect.height || 36;
+            visualizerCanvas.width = visW * dpr;
+            visualizerCanvas.height = visH * dpr;
+            visualizerCtx.scale(dpr, dpr);
         }
 
         // --- GRAPHICS RENDERING SYSTEM ---
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Back grid frame design
-            ctx.fillStyle = 'rgba(8, 8, 10, 0.4)';
+            // Elevated opacity to maintain text legibility when backgrounds overlap
+            ctx.fillStyle = 'rgba(8, 8, 10, 0.95)';
             ctx.fillRect(viewportBox.x, viewportBox.y, viewportBox.w, viewportBox.h);
 
             ctx.strokeStyle = '#1e1e21';
@@ -739,8 +788,9 @@
         }
 
         function renderLossHistory() {
-            const w = visualizerCanvas.width = visualizerCanvas.parentElement.clientWidth;
-            const h = visualizerCanvas.height = visualizerCanvas.parentElement.clientHeight || 36;
+            const dpr = window.devicePixelRatio || 1;
+            const w = visualizerCanvas.width / dpr;
+            const h = visualizerCanvas.height / dpr;
             
             visualizerCtx.clearRect(0, 0, w, h);
 
@@ -825,7 +875,7 @@
         }
 
         function wThreshold() {
-            return visualizerCanvas.width ? Math.floor(visualizerCanvas.width) : 300;
+            return visualizerCanvas.width ? Math.floor(visualizerCanvas.width / (window.devicePixelRatio || 1)) : 300;
         }
 
         // --- RUN SYSTEM ---
