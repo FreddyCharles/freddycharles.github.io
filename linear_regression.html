@@ -10,170 +10,295 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <!-- Link to the styled CSS -->
     <link rel="stylesheet" href="style.css">
+    
     <style>
-        /* CSS overrides for background canvas layer and interaction layout structure */
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1; 
-            pointer-events: none; /* Allows pointer clicks to pass through to the window processor */
+        /* Modern Swiss-Style Dashboard Controls & Flex Workspace */
+        .lab-workspace {
+            display: flex;
+            flex-direction: row;
+            gap: 1.5rem;
+            margin: 2rem 0;
+            width: 100%;
         }
+        
+        .lab-panel {
+            background: #08080a;
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+        
+        .lab-controls {
+            flex: 1.2;
+            min-width: 280px;
+            max-width: 340px;
+        }
+        
+        .lab-visualizer {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        
+        .lab-telemetry {
+            flex: 1.3;
+            min-width: 300px;
+            max-width: 380px;
+        }
+        
+        .panel-section-title {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
+            letter-spacing: 1px;
+            width: 100%;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            width: 100%;
+        }
+        
+        .control-group label {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+        
+        .mode-toggle-buttons, .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            width: 100%;
+        }
+        
+        .mode-btn, .action-btn, .exec-btn {
+            flex: 1;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.55rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .mode-btn.active-state, .action-btn.active-state {
+            background: var(--text-primary);
+            color: #000;
+            border-color: var(--text-primary);
+        }
+        
+        .mode-btn:hover:not(.active-state), 
+        .action-btn:hover:not(.active-state), 
+        .exec-btn:hover {
+            border-color: var(--swiss-red);
+            color: var(--swiss-red);
+        }
+        
+        .lab-select {
+            background: #0c0c0e;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.45rem;
+            outline: none;
+            cursor: pointer;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        
+        .lab-select:hover {
+            border-color: var(--swiss-red);
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        
+        .lab-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 2px;
+            background: var(--border-color);
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .lab-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 10px;
+            height: 10px;
+            background: var(--text-primary);
+            border-radius: 0;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        
+        .lab-slider::-webkit-slider-thumb:hover {
+            background: var(--swiss-red);
+        }
+        
+        .canvas-container-inline {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: #040406;
+            border: 1px solid var(--border-color);
+            position: relative;
+            margin-top: 0.5rem;
+        }
+        
         #three-body-canvas {
             display: block;
             width: 100%;
             height: 100%;
-            filter: none !important; /* Forces override of portfolio blur filters */
+            filter: none !important;
             backdrop-filter: none !important;
-            opacity: 1 !important;
         }
-        .wrapper {
+        
+        .canvas-instructions {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-top: 0.75rem;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .metric-box {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            width: 100%;
+        }
+        
+        .metric-label {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+        
+        .metric-value {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .epoch-progress-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            margin-bottom: 0.25rem;
+            width: 100%;
+        }
+        
+        .epoch-count {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .epoch-progress-bar {
+            height: 3px;
+            background: var(--border-color);
             position: relative;
-            z-index: 2; 
-            pointer-events: auto;
+            width: 100%;
         }
-        .back-link:hover {
-            opacity: 0.8;
-            border-bottom: 1px solid var(--swiss-red);
+        
+        .epoch-playhead {
+            height: 100%;
+            background: var(--swiss-red);
+            width: 0%;
+            transition: width 0.1s linear;
         }
-        select:hover {
-            border-color: var(--swiss-red) !important;
+        
+        .execution-controls {
+            display: flex;
+            gap: 0.5rem;
+            width: 100%;
         }
+        
+        .loss-history-container {
+            width: 100%;
+            height: 120px;
+        }
+        
+        #audio-visualizer {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .audio-signal-light {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #30d158;
+            display: inline-block;
+            box-shadow: 0 0 6px #30d158;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .audio-signal-light.paused {
+            background: var(--swiss-red);
+            box-shadow: 0 0 6px var(--swiss-red);
+        }
+        
         .dimmed {
-            opacity: 0.3;
+            opacity: 0.35;
             pointer-events: none;
             transition: opacity 0.3s ease;
+        }
+        
+        .back-link:hover {
+            opacity: 0.85;
+        }
+
+        /* Responsive Layout Overrides */
+        @media (max-width: 1024px) {
+            .lab-workspace {
+                flex-direction: column;
+            }
+            .lab-controls, .lab-telemetry {
+                max-width: 100%;
+            }
+            .canvas-container-inline {
+                aspect-ratio: 1.15 / 1;
+            }
         }
     </style>
 </head>
 <body>
-
-    <!-- PHYSICS INTERACTIVE OVERLAY -->
-    <div id="canvas-container">
-        <canvas id="three-body-canvas"></canvas>
-    </div>
-
-    <!-- TELEMETRY BANNER STRIP -->
-    <div class="audio-strip">
-        <div class="audio-section">
-            <div class="audio-meta">
-                <span class="audio-signal-light" id="engine-status-light"></span>
-                <span class="audio-title-text" id="engine-title-label">ENGINE: GRADIENT DESCENT</span>
-            </div>
-        </div>
-        <div class="audio-section" style="flex: 2;">
-            <div class="audio-controls">
-                <button class="audio-btn" id="btn-play-pause">
-                    <span id="play-pause-text">PAUSE</span>
-                </button>
-                <button class="audio-btn" id="btn-step">STEP</button>
-                <button class="audio-btn" id="btn-reset">RESET</button>
-                
-                <div class="audio-progress-container">
-                    <div class="audio-timeline" id="epoch-timeline">
-                        <div class="audio-playhead" id="epoch-playhead"></div>
-                    </div>
-                    <span class="audio-time" id="telemetry-epoch">EPOCH: 0/1000</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Live Loss History Canvas Mapping -->
-        <div class="audio-waveform-container" title="Real-time Mean Squared Error Curve">
-            <canvas id="audio-visualizer"></canvas>
-        </div>
-        
-        <!-- Learning Rate Modifier Slider -->
-        <div class="audio-volume-container" id="lr-container">
-            <span class="volume-icon" style="font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700;">LR</span>
-            <input type="range" min="0.005" max="0.3" step="0.005" value="0.08" class="volume-slider" id="lr-slider">
-            <span id="lr-value" style="font-family: var(--font-mono); font-size: 0.75rem; min-width: 40px; color: var(--text-secondary);">0.080</span>
-        </div>
-    </div>
-
-    <!-- HIGH-FIDELITY COMPACT SIM CONTROL PANEL -->
-    <div class="sim-control-panel">
-        <div class="sim-panel-header">
-            <span class="panel-title">CONTROL GRID</span>
-            <div class="header-actions">
-                <button class="header-icon-btn" id="panel-settings-btn" title="Toggle Configuration Options">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
-                    </svg>
-                </button>
-                <button class="header-icon-btn" id="panel-collapse-btn" title="Collapse Control HUD">
-                    <span id="collapse-arrow">▲</span>
-                </button>
-            </div>
-        </div>
-        
-        <div class="sim-panel-body" id="panel-body">
-            <div class="control-row">
-                <button class="sim-control-btn active-state" id="ctrl-btn-gd" title="Optimization: Gradient Descent">
-                    <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">GD</span>
-                </button>
-                <button class="sim-control-btn" id="ctrl-btn-ols" title="Optimization: Ordinary Least Squares (Closed-Form)">
-                    <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">OLS</span>
-                </button>
-                <button class="sim-control-btn" id="ctrl-btn-draw" title="Draw Mode: Custom Point Injection">
-                    <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">DRAW</span>
-                </button>
-                <button class="sim-control-btn" id="ctrl-btn-outlier" title="Inject Heavy Regression Outlier">
-                    <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">+OUT</span>
-                </button>
-            </div>
-
-            <!-- Configuration Parameters Drawer -->
-            <div class="sim-settings-drawer" id="settings-drawer">
-                <div class="sim-param-group">
-                    <div class="sim-param-label">
-                        <span>Dataset Pattern</span>
-                        <span id="label-pattern">LINEAR</span>
-                    </div>
-                    <select id="dataset-select" style="background: rgba(8,8,10,0.95); color: var(--text-primary); border: 1px solid var(--border-color); font-family: var(--font-mono); font-size: 0.75rem; padding: 0.3rem; outline: none; margin-top: 0.15rem; cursor: pointer;">
-                        <option value="linear">Linear Distribution</option>
-                        <option value="quadratic">Quadratic Curve</option>
-                        <option value="exponential">Exponential Growth</option>
-                        <option value="random">Uncorrelated Random Noise</option>
-                        <option value="outliers">Structured Outlier Set</option>
-                    </select>
-                </div>
-
-                <div class="sim-param-group">
-                    <div class="sim-param-label">
-                        <span>Sample Size (N)</span>
-                        <span id="label-n-val">50</span>
-                    </div>
-                    <input type="range" min="10" max="250" step="5" value="50" class="sim-slider" id="slider-n">
-                </div>
-
-                <div class="sim-param-group">
-                    <div class="sim-param-label">
-                        <span>Dispersion (Noise)</span>
-                        <span id="label-noise-val">12%</span>
-                    </div>
-                    <input type="range" min="0" max="40" step="1" value="12" class="sim-slider" id="slider-noise">
-                </div>
-
-                <div class="sim-param-group" id="speed-container">
-                    <div class="sim-param-label">
-                        <span>Compute Speed</span>
-                        <span id="label-speed-val">1x</span>
-                    </div>
-                    <input type="range" min="1" max="15" step="1" value="1" class="sim-slider" id="slider-speed">
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- EDITORIAL SWISS LAYOUT WRAPPER -->
     <div class="wrapper">
         <header>
             <div class="header-title-box">
                 <div style="margin-bottom: 1.5rem;">
-                    <a href="index.html" class="back-link" style="display: inline-block; text-decoration: none; color: var(--swiss-red); font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; transition: opacity 0.2s;">&larr; BACK TO PORTFOLIO</a>
+                    <a href="index.html" class="back-link" style="display: inline-block; text-decoration: none; color: var(--swiss-red); font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; transition: opacity 0.2s;">&larr; BACK TO PORTFOLIO</a>
                 </div>
                 <h1>REGRESSION <span class="accent-bullet">■</span> ANALYSIS</h1>
                 <div class="intro-text">
@@ -182,17 +307,136 @@
             </div>
             <div class="header-meta-box">
                 <div>
-                    <div class="contact-header">SYSTEM METRICS</div>
-                    <div id="meta-engine-mode">MODE: Gradient Descent</div>
-                    <div id="meta-loss">LOSS (MSE): 0.000000</div>
-                    <div id="meta-equation" style="color: var(--swiss-red); font-weight: 700;">f(x) = 0.00x + 0.00</div>
-                </div>
-                <div style="margin-top: 1.5rem; line-height: 1.4;">
-                    <span class="accent-bullet">■</span> Workspace Overlay Enabled.<br>
-                    Toggle <strong style="color: var(--text-primary);">DRAW</strong> in the menu to plot coordinates manually directly onto the grid.
+                    <div class="contact-header">SYSTEM ARCHITECTURE</div>
+                    <div>CSS Grid-flow and Flex containers.</div>
+                    <div>Rendering inline vectors natively.</div>
                 </div>
             </div>
         </header>
+
+        <!-- CENTRAL LABORATORY WORKSPACE -->
+        <section class="lab-workspace">
+            
+            <!-- Left Panel: Parameters -->
+            <div class="lab-panel lab-controls">
+                <div class="panel-section-title">[ 01 // PARAMETERS ]</div>
+                
+                <div class="control-group">
+                    <label>OPTIMIZATION ENGINE</label>
+                    <div class="mode-toggle-buttons">
+                        <button class="mode-btn active-state" id="ctrl-btn-gd">GD</button>
+                        <button class="mode-btn" id="ctrl-btn-ols">OLS</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>DATASET PATTERN</label>
+                    <select id="dataset-select" class="lab-select">
+                        <option value="linear">Linear Distribution</option>
+                        <option value="quadratic">Quadratic Curve</option>
+                        <option value="exponential">Exponential Growth</option>
+                        <option value="random">Uncorrelated Random Noise</option>
+                        <option value="outliers">Structured Outlier Set</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <div class="slider-label">
+                        <span>SAMPLE SIZE (N)</span>
+                        <span id="label-n-val">50</span>
+                    </div>
+                    <input type="range" min="10" max="250" step="5" value="50" class="lab-slider" id="slider-n">
+                </div>
+
+                <div class="control-group">
+                    <div class="slider-label">
+                        <span>DISPERSION (NOISE)</span>
+                        <span id="label-noise-val">12%</span>
+                    </div>
+                    <input type="range" min="0" max="40" step="1" value="12" class="lab-slider" id="slider-noise">
+                </div>
+
+                <div class="control-group" id="lr-container">
+                    <div class="slider-label">
+                        <span>LEARNING RATE (LR)</span>
+                        <span id="lr-value">0.080</span>
+                    </div>
+                    <input type="range" min="0.005" max="0.3" step="0.005" value="0.08" class="lab-slider" id="lr-slider">
+                </div>
+
+                <div class="control-group" id="speed-container">
+                    <div class="slider-label">
+                        <span>COMPUTE SPEED</span>
+                        <span id="label-speed-val">1x</span>
+                    </div>
+                    <input type="range" min="1" max="15" step="1" value="1" class="lab-slider" id="slider-speed">
+                </div>
+
+                <div class="control-group">
+                    <label>WORKSPACE ACTIONS</label>
+                    <div class="action-buttons">
+                        <button class="action-btn" id="ctrl-btn-draw">DRAW</button>
+                        <button class="action-btn" id="ctrl-btn-outlier">+OUT</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel: Grid Canvas -->
+            <div class="lab-panel lab-visualizer">
+                <div class="panel-section-title">[ 02 // COORDINATE SPACE ]</div>
+                <div class="canvas-container-inline">
+                    <canvas id="three-body-canvas"></canvas>
+                </div>
+                <div class="canvas-instructions">
+                    <span class="accent-bullet">■</span> Toggle <strong style="color: var(--text-primary);">DRAW</strong> in the dashboard to click and plot custom coordinates manually.
+                </div>
+            </div>
+
+            <!-- Right Panel: Telemetry & MSE Loss -->
+            <div class="lab-panel lab-telemetry">
+                <div class="panel-section-title">[ 03 // LIVE TELETRENDS ]</div>
+
+                <div class="metric-box">
+                    <div class="metric-label">ENGINE RESOLUTION</div>
+                    <div class="metric-value" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="audio-signal-light" id="engine-status-light"></span>
+                        <span id="engine-title-label">ENGINE: GRADIENT DESCENT</span>
+                    </div>
+                </div>
+
+                <div class="metric-box">
+                    <div class="metric-label">CURRENT FORMULA</div>
+                    <div class="metric-value" id="meta-equation" style="color: var(--swiss-red); font-weight: 700;">f(x) = 0.00x + 0.00</div>
+                </div>
+
+                <div class="metric-box">
+                    <div class="metric-label">MEAN SQUARED ERROR (MSE)</div>
+                    <div class="metric-value" id="meta-loss">LOSS (MSE): 0.000000</div>
+                </div>
+
+                <div class="metric-box">
+                    <div class="epoch-progress-container">
+                        <span class="epoch-count" id="telemetry-epoch">EPOCH: 0/600</span>
+                        <div class="epoch-progress-bar">
+                            <div class="epoch-playhead" id="epoch-playhead"></div>
+                        </div>
+                    </div>
+                    <div class="execution-controls">
+                        <button class="exec-btn" id="btn-play-pause">PAUSE</button>
+                        <button class="exec-btn" id="btn-step">STEP</button>
+                        <button class="exec-btn" id="btn-reset">RESET</button>
+                    </div>
+                </div>
+
+                <div class="metric-box" style="flex: 1; display: flex; flex-direction: column;">
+                    <div class="metric-label">MSE TRENDLINE HISTORY</div>
+                    <div class="loss-history-container" style="flex: 1; background: #040406; border: 1px solid var(--border-color); margin-top: 0.5rem; position: relative;">
+                        <canvas id="audio-visualizer"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+        </section>
 
         <!-- SECTION 1: THEORETICAL BASIS -->
         <div class="section-grid">
@@ -315,12 +559,6 @@
         const btnDraw = document.getElementById('ctrl-btn-draw');
         const btnOutlier = document.getElementById('ctrl-btn-outlier');
 
-        const settingsBtn = document.getElementById('panel-settings-btn');
-        const settingsDrawer = document.getElementById('settings-drawer');
-        const collapseBtn = document.getElementById('panel-collapse-btn');
-        const collapseArrow = document.getElementById('collapse-arrow');
-        const panelBody = document.getElementById('panel-body');
-
         const selectDataset = document.getElementById('dataset-select');
         const sliderN = document.getElementById('slider-n');
         const sliderNoise = document.getElementById('slider-noise');
@@ -339,17 +577,6 @@
 
         // --- INTERACTIVE SYSTEM EVENT INITIALIZATION ---
         function initEvents() {
-            // Panel Collapse / Expand
-            collapseBtn.addEventListener('click', () => {
-                panelBody.classList.toggle('collapsed');
-                collapseArrow.textContent = panelBody.classList.contains('collapsed') ? '▼' : '▲';
-            });
-
-            settingsBtn.addEventListener('click', () => {
-                settingsDrawer.classList.toggle('open');
-                settingsBtn.classList.toggle('active-state');
-            });
-
             // Playback controls
             btnPlayPause.addEventListener('click', () => {
                 isPaused = !isPaused;
@@ -433,25 +660,15 @@
                 }
             });
 
-            // Global click processor mapping layout intercepts to the grid coordinates
-            window.addEventListener('click', (e) => {
+            // Canvas coordinate mapping intercept (Direct canvas binding, no floating overlays)
+            canvas.addEventListener('click', (e) => {
                 if (!isDrawMode) return;
-
-                // Stop inputs if clicking inside dashboard UI blocks
-                if (e.target.closest('.sim-control-panel') || 
-                    e.target.closest('.audio-strip') || 
-                    e.target.closest('a') || 
-                    e.target.closest('button') || 
-                    e.target.closest('select') || 
-                    e.target.closest('input')) {
-                    return;
-                }
 
                 const rect = canvas.getBoundingClientRect();
                 const clickX = e.clientX - rect.left;
                 const clickY = e.clientY - rect.top;
 
-                // Validate boundaries of the layout coordinate box
+                // Validate boundaries
                 if (clickX >= viewportBox.x && clickX <= viewportBox.x + viewportBox.w &&
                     clickY >= viewportBox.y && clickY <= viewportBox.y + viewportBox.h) {
                     
@@ -645,26 +862,16 @@
             const w = rect.width;
             const h = rect.height;
 
-            if (w > 992) {
-                // Large displays: Position coordinate box on the right hand side of the canvas
-                const size = Math.min(w * 0.38, h * 0.55, 450);
-                viewportBox.w = size;
-                viewportBox.h = size;
-                viewportBox.x = w * 0.55 + (w * 0.38 - size) / 2;
-                viewportBox.y = h * 0.25 + (h * 0.55 - size) / 2;
-            } else {
-                // Tablet/Mobile displays: Center box lower on the page
-                const size = Math.min(w * 0.82, h * 0.35, 300);
-                viewportBox.w = size;
-                viewportBox.h = size;
-                viewportBox.x = (w - size) / 2;
-                viewportBox.y = h * 0.45;
-            }
+            // Compute standard structural margins directly matching the inline visualizer boundaries
+            viewportBox.x = 45;
+            viewportBox.y = 25;
+            viewportBox.w = w - 70;
+            viewportBox.h = h - 60;
 
             // Cleanly resize the loss visualizer canvas here to prevent frame-rate layout thrashing
             const visRect = visualizerCanvas.parentElement.getBoundingClientRect();
             const visW = visRect.width || 300;
-            const visH = visRect.height || 36;
+            const visH = visRect.height || 100;
             visualizerCanvas.width = visW * dpr;
             visualizerCanvas.height = visH * dpr;
             visualizerCtx.scale(dpr, dpr);
