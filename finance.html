@@ -1,4 +1,3 @@
---- START OF FILE finance.html ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -312,33 +311,58 @@
             )
         };
 
-        // Standard UK Income Tax & National Insurance Engine (2024/2025 Standard Rules)
-        function calculateUKIncomeTaxAndNI(grossIncome, isRetirement = false) {
-            // Personal Allowance taper rules (£1 down for every £2 over £100k)
+        // 1. Corrected Income Tax and National Insurance calculation engine
+        function calculateUKIncomeTaxAndNI(grossIncome, isRetirement = false, isScottish = false) {
             let personalAllowance = 12570;
+            
+            // Fix Personal Allowance Tapering Bug
             if (grossIncome > 100000) {
                 const reduction = (grossIncome - 100000) / 2;
                 personalAllowance = Math.max(0, 12570 - reduction);
             }
 
             let tax = 0;
-            let remainingTaxable = Math.max(0, grossIncome - personalAllowance);
+            let taxableIncome = Math.max(0, grossIncome - personalAllowance);
 
-            const basicRateMax = 37700;
-            const basicRateTaxable = Math.min(remainingTaxable, basicRateMax);
-            tax += basicRateTaxable * 0.20;
-            remainingTaxable -= basicRateTaxable;
+            if (isScottish) {
+                // Correct 2026/27 Scottish Earned Income Tax Bands
+                const bands = [
+                    { limit: 3967, rate: 0.19 },
+                    { limit: 16956, rate: 0.20 },
+                    { limit: 31092, rate: 0.21 },
+                    { limit: 62430, rate: 0.42 },
+                    { limit: 125140, rate: 0.45 },
+                    { limit: Infinity, rate: 0.48 }
+                ];
+                let remaining = taxableIncome;
+                let lastLimit = 0;
+                for (let i = 0; i < bands.length; i++) {
+                    const width = bands[i].limit - lastLimit;
+                    const taxableInBand = Math.min(remaining, width);
+                    tax += taxableInBand * bands[i].rate;
+                    remaining -= taxableInBand;
+                    lastLimit = bands[i].limit;
+                    if (remaining <= 0) break;
+                }
+            } else {
+                // Fix Hardcoded Higher Rate Band Span Bug
+                const basicRateMax = 37700;
+                const basicRateTaxable = Math.min(taxableIncome, basicRateMax);
+                tax += basicRateTaxable * 0.20;
 
-            const higherRateMax = 125140 - 50270;
-            const higherRateTaxable = Math.min(remainingTaxable, higherRateMax);
-            tax += higherRateTaxable * 0.40;
-            remainingTaxable -= higherRateTaxable;
+                // Dynamic higher rate band limit that scales with the tapered allowance
+                const higherRateMax = 125140 - personalAllowance - basicRateMax;
+                const remainingTaxable = Math.max(0, taxableIncome - basicRateTaxable);
+                const higherRateTaxable = Math.min(remainingTaxable, higherRateMax);
+                tax += higherRateTaxable * 0.40;
 
-            if (remainingTaxable > 0) {
-                tax += remainingTaxable * 0.45;
+                const additionalRateTaxable = Math.max(0, remainingTaxable - higherRateTaxable);
+                if (additionalRateTaxable > 0) {
+                    tax += additionalRateTaxable * 0.45;
+                }
             }
 
-            // NI Class 1 Primary Rules (No NI applied on pension withdrawals in retirement)
+            // Dynamic Employee Class 1 National Insurance Calculation
             let ni = 0;
             if (!isRetirement && grossIncome > 12570) {
                 const standardBandEarnings = Math.min(grossIncome, 50270) - 12570;
@@ -353,9 +377,75 @@
             return { tax, ni, net: Math.max(0, grossIncome - tax - ni) };
         }
 
+        // 2. Multi-Plan Student Loan Deduction Algorithm
+        function calculateStudentLoanRepayments(grossIncome, activePlans = []) {
+            const plans = {
+                'Plan1': { threshold: 26900, rate: 0.09 },
+                'Plan2': { threshold: 29385, rate: 0.09 },
+                'Plan5': { threshold: 25000, rate: 0.09 },
+                'Postgrad': { threshold: 21000, rate: 0.06 }
+            };
+
+            let annualDeduction = 0;
+            let breakdown = { undergraduate: 0, postgraduate: 0 };
+
+            const activeUGPlans = activePlans.filter(p => p !== 'Postgrad');
+            const hasPostgrad = activePlans.includes('Postgrad');
+
+            // Multi-UG Plan Rule: Repay 9% above the lowest active threshold
+            if (activeUGPlans.length > 0) {
+                const lowestThreshold = Math.min(...activeUGPlans.map(p => plans[p].threshold));
+                const ugRepayment = Math.max(0, grossIncome - lowestThreshold) * 0.09;
+                annualDeduction += ugRepayment;
+                breakdown.undergraduate = ugRepayment;
+            }
+
+            // Postgraduate Loan Rule: Repay 6% above the postgraduate threshold independently
+            if (hasPostgrad) {
+                const pgRepayment = Math.max(0, grossIncome - plans['Postgrad'].threshold) * 0.06;
+                annualDeduction += pgRepayment;
+                breakdown.postgraduate = pgRepayment;
+            }
+
+            return {
+                annualDeduction,
+                monthlyDeduction: annualDeduction / 12,
+                breakdown
+            };
+        }
+
+        // 3. Transitional 2027 ISA Allowance Validator
+        function validateISAContributions(year, age, cashISADeposit, stockISADeposit, lisaDeposit) {
+            const totalISA = cashISADeposit + stockISADeposit + lisaDeposit;
+            let validationErrors = [];
+            let cashISALimit = 20000;
+
+            if (totalISA > 20000) {
+                validationErrors.push("Total contributions across all ISAs cannot exceed £20,000 per tax year.");
+            }
+
+            if (lisaDeposit > 4000) {
+                validationErrors.push("Lifetime ISA contributions are capped at £4,000 per tax year.");
+            }
+
+            // Model scheduled 6 April 2027 reduction in Cash ISA allowance for under-65s
+            if (year >= 2027 && age < 65) {
+                cashISALimit = 12000;
+                if (cashISADeposit > cashISALimit) {
+                    validationErrors.push(`From April 2027, the Cash ISA limit for savers under 65 drops to £12,000. Excess redirected.`);
+                }
+            }
+
+            return {
+                isValid: validationErrors.length === 0,
+                errors: validationErrors,
+                cashLimit: cashISALimit
+            };
+        }
+
         // Numerical Solver to find the required gross pension withdrawal matching a target net payout.
         // Accounts for existing taxable income (e.g. State Pension) and the 25% tax-free lump sum (UFPLS).
-        function solveGrossPensionWithdrawal(targetNetNeeded, otherTaxableIncome = 0) {
+        function solveGrossPensionWithdrawal(targetNetNeeded, otherTaxableIncome = 0, isScottish = false) {
             if (targetNetNeeded <= 0) return 0;
             
             let low = targetNetNeeded;
@@ -371,8 +461,8 @@
                 const taxableComponent = mid * 0.75;
 
                 // Evaluate marginal tax added onto other taxable income
-                const taxWithOnlyOtherIncome = calculateUKIncomeTaxAndNI(otherTaxableIncome, true).tax;
-                const totalTaxWithWithdrawal = calculateUKIncomeTaxAndNI(otherTaxableIncome + taxableComponent, true).tax;
+                const taxWithOnlyOtherIncome = calculateUKIncomeTaxAndNI(otherTaxableIncome, true, isScottish).tax;
+                const totalTaxWithWithdrawal = calculateUKIncomeTaxAndNI(otherTaxableIncome + taxableComponent, true, isScottish).tax;
                 const marginalTaxOwed = totalTaxWithWithdrawal - taxWithOnlyOtherIncome;
 
                 const netResult = taxFreeComponent + (taxableComponent - marginalTaxOwed);
@@ -399,13 +489,18 @@
                 current_salary: 55000, 
                 annual_salary_growth_percent: 2.5,
                 
+                is_scottish: false,
+                student_loan_plan: 'Plan2', // None, Plan1, Plan2, Plan5, Postgrad, Plan2_Postgrad
+                
                 // UK Pension Configurations
                 employee_pension_percent: 6.0, 
                 employer_pension_percent: 4.0, 
                 pension_contribution_type: 'salary_sacrifice', // 'salary_sacrifice' or 'net_pay'
                 
                 // UK ISA Configurations
-                isa_contribution_percent: 8.0, // savings rate from net take-home
+                cash_isa_percent: 0,
+                stocks_isa_percent: 8.0,
+                lisa_percent: 0,
                 
                 // Generic Projections
                 expected_return_percent: 6.5,
@@ -447,7 +542,7 @@
                     sanitized = Math.max(1, Math.min(110, parseInt(value) || 0));
                 } else if (['current_pension_balance', 'current_isa_balance', 'current_salary', 'monthly_bills', 'retire_annual_spend_today', 'state_pension_amount_today'].includes(key)) {
                     sanitized = Math.max(0, parseFloat(value) || 0);
-                } else if (['employee_pension_percent', 'employer_pension_percent', 'isa_contribution_percent', 'expected_return_percent', 'inflation_percent', 'annual_salary_growth_percent', 'retire_growth_percent'].includes(key)) {
+                } else if (['employee_pension_percent', 'employer_pension_percent', 'cash_isa_percent', 'stocks_isa_percent', 'lisa_percent', 'expected_return_percent', 'inflation_percent', 'annual_salary_growth_percent', 'retire_growth_percent'].includes(key)) {
                     sanitized = Math.max(0, parseFloat(value) || 0);
                 }
                 setConfig(prev => ({ ...prev, [key]: sanitized }));
@@ -515,7 +610,7 @@
                 let salary = parseFloat(config.current_salary) || 0;
                 let employee_pension_percent = parseFloat(config.employee_pension_percent) || 0;
                 let employer_pension_percent = parseFloat(config.employer_pension_percent) || 0;
-                let isa_percent = parseFloat(config.isa_contribution_percent) || 0;
+                
                 const monthly_bills_base = parseFloat(config.monthly_bills) || 0;
 
                 const return_rate = (parseFloat(config.expected_return_percent) || 0) / 100;
@@ -529,7 +624,17 @@
                 let cumulativeContributionsISA = 0;
                 let annualPensionAllowanceWarningTriggered = false;
 
+                let activeStudentLoanPlans = [];
+                if (config.student_loan_plan === 'Plan1') activeStudentLoanPlans.push('Plan1');
+                else if (config.student_loan_plan === 'Plan2') activeStudentLoanPlans.push('Plan2');
+                else if (config.student_loan_plan === 'Plan5') activeStudentLoanPlans.push('Plan5');
+                else if (config.student_loan_plan === 'Postgrad') activeStudentLoanPlans.push('Postgrad');
+                else if (config.student_loan_plan === 'Plan2_Postgrad') { activeStudentLoanPlans.push('Plan2'); activeStudentLoanPlans.push('Postgrad'); }
+
+                const currentYear = new Date().getFullYear();
+
                 for (let age = current_age; age < target_age; age++) {
+                    const year = currentYear + (age - current_age);
                     const ageEvents = events.filter(e => e.age === age);
                     let systemMessage = "";
 
@@ -558,40 +663,63 @@
                         annualPensionAllowanceWarningTriggered = true;
                     }
 
-                    // 2. Compute Net Take-Home Pay based on UK Pension Arrangement Scheme
+                    // 2. Compute Net Take-Home Pay based on UK Pension Arrangement Scheme and Student Loans
                     let taxableIncome = salary;
                     let taxAndNI = { tax: 0, ni: 0, net: 0 };
                     let actualNetTakeHome = 0;
+                    let studentLoanDeduction = 0;
 
                     if (config.pension_contribution_type === 'salary_sacrifice') {
-                        // Salary sacrifice lowers Gross salary directly before Tax and NI calculations
+                        // Salary sacrifice lowers Gross salary directly before Tax, NI, and Student Loan calculations
                         taxableIncome = Math.max(0, salary - employeePensionContribution);
-                        taxAndNI = calculateUKIncomeTaxAndNI(taxableIncome, false);
-                        actualNetTakeHome = taxAndNI.net;
+                        taxAndNI = calculateUKIncomeTaxAndNI(taxableIncome, false, config.is_scottish);
+                        studentLoanDeduction = calculateStudentLoanRepayments(taxableIncome, activeStudentLoanPlans).annualDeduction;
+                        actualNetTakeHome = taxAndNI.net - studentLoanDeduction;
                     } else {
-                        // Net Pay Arrangement: Lower taxable gross before tax calculations, but NI is paid on full salary
+                        // Net Pay Arrangement: Lower taxable gross before tax calculations, but NI and Student loans paid on full salary
                         const taxOnlyAdjusted = Math.max(0, salary - employeePensionContribution);
-                        const fullTaxAndNI = calculateUKIncomeTaxAndNI(salary, false);
-                        const taxOnAdjusted = calculateUKIncomeTaxAndNI(taxOnlyAdjusted, false).tax;
+                        const fullTaxAndNI = calculateUKIncomeTaxAndNI(salary, false, config.is_scottish);
+                        const taxOnAdjusted = calculateUKIncomeTaxAndNI(taxOnlyAdjusted, false, config.is_scottish).tax;
                         
-                        actualNetTakeHome = salary - taxOnAdjusted - fullTaxAndNI.ni - employeePensionContribution;
+                        studentLoanDeduction = calculateStudentLoanRepayments(salary, activeStudentLoanPlans).annualDeduction;
+
+                        actualNetTakeHome = salary - taxOnAdjusted - fullTaxAndNI.ni - employeePensionContribution - studentLoanDeduction;
                     }
 
-                    // 3. Compute ISA Savings (Capped at UK Statutory £20,000 threshold)
-                    let isaAddedThisYear = actualNetTakeHome * (isa_percent / 100);
-                    if (isaAddedThisYear > 20000) {
-                        isaAddedThisYear = 20000;
-                        systemMessage += "ISA cap reached (£20,000 max). ";
+                    // 3. Compute ISA Savings (Validated and Capped)
+                    const cashIsaRequested = actualNetTakeHome * (parseFloat(config.cash_isa_percent) || 0) / 100;
+                    const stocksIsaRequested = actualNetTakeHome * (parseFloat(config.stocks_isa_percent) || 0) / 100;
+                    const lisaRequested = actualNetTakeHome * (parseFloat(config.lisa_percent) || 0) / 100;
+
+                    const isaValidation = validateISAContributions(year, age, cashIsaRequested, stocksIsaRequested, lisaRequested);
+                    if (!isaValidation.isValid) {
+                        isaValidation.errors.forEach(err => {
+                            if (!systemMessage.includes("ISA")) systemMessage += err + " ";
+                        });
                     }
+
+                    let actualLisaAdded = Math.min(lisaRequested, 4000);
+                    let actualCashIsaAdded = cashIsaRequested;
+                    if (year >= 2027 && age < 65) {
+                        actualCashIsaAdded = Math.min(actualCashIsaAdded, 12000);
+                    }
+                    let remainingIsaSpace = Math.max(0, 20000 - actualLisaAdded - actualCashIsaAdded);
+                    let actualStocksIsaAdded = Math.min(stocksIsaRequested, remainingIsaSpace);
+
+                    // Apply LISA Bonus (+25% on LISA deposits)
+                    const lisaBonus = actualLisaAdded * 0.25;
+
+                    const outOfPocketISAThisYear = actualCashIsaAdded + actualStocksIsaAdded + actualLisaAdded;
+                    const isaAddedThisYear = outOfPocketISAThisYear + lisaBonus;
 
                     // Accumulate records
                     cumulativeContributionsPension += totalAnnualPensionContribution;
-                    cumulativeContributionsISA += isaAddedThisYear;
+                    cumulativeContributionsISA += outOfPocketISAThisYear;
 
                     // 4. Track Cost of Living Expenses
                     const years_passed = age - current_age;
                     const annual_bills_inflated = (monthly_bills_base * 12) * Math.pow(1 + inflation_rate, years_passed);
-                    const surplusDiscretionary = actualNetTakeHome - isaAddedThisYear - annual_bills_inflated;
+                    const surplusDiscretionary = actualNetTakeHome - outOfPocketISAThisYear - annual_bills_inflated;
 
                     // 5. Portfolio Growth Compounding (End-of-Year Assumption)
                     pension_balance = (pension_balance * (1 + return_rate)) + totalAnnualPensionContribution;
@@ -604,8 +732,10 @@
                         age,
                         salary,
                         netTakeHome: actualNetTakeHome,
+                        studentLoanDeduction: studentLoanDeduction,
                         pensionAdded: totalAnnualPensionContribution,
-                        isaAdded: isaAddedThisYear,
+                        isaAdded: outOfPocketISAThisYear,
+                        lisaBonusAdded: lisaBonus,
                         bills: annual_bills_inflated,
                         discretionary: surplusDiscretionary,
                         pensionBalance: pension_balance,
@@ -676,31 +806,31 @@
                                 isa_pool = 0;
 
                                 const pensionGap = netRequiredFromPortfolio - drawnFromISA;
-                                grossDrawnFromPension = solveGrossPensionWithdrawal(pensionGap, activeStatePension);
+                                grossDrawnFromPension = solveGrossPensionWithdrawal(pensionGap, activeStatePension, config.is_scottish);
                                 
                                 const taxablePensionPortion = grossDrawnFromPension * 0.75;
-                                taxPaidThisYear = calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true).tax - calculateUKIncomeTaxAndNI(activeStatePension, true).tax;
+                                taxPaidThisYear = calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true, config.is_scottish).tax - calculateUKIncomeTaxAndNI(activeStatePension, true, config.is_scottish).tax;
                                 pension_pool = Math.max(0, pension_pool - grossDrawnFromPension);
                             }
                         } else {
                             // Blended/Pension-First: Cover baseline gap with Pension pot where possible
-                            const grossPensionAttempt = solveGrossPensionWithdrawal(netRequiredFromPortfolio, activeStatePension);
+                            const grossPensionAttempt = solveGrossPensionWithdrawal(netRequiredFromPortfolio, activeStatePension, config.is_scottish);
                             if (pension_pool >= grossPensionAttempt) {
                                 grossDrawnFromPension = grossPensionAttempt;
                                 pension_pool -= grossDrawnFromPension;
 
                                 const taxablePensionPortion = grossDrawnFromPension * 0.75;
-                                taxPaidThisYear = calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true).tax - calculateUKIncomeTaxAndNI(activeStatePension, true).tax;
+                                taxPaidThisYear = calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true, config.is_scottish).tax - calculateUKIncomeTaxAndNI(activeStatePension, true, config.is_scottish).tax;
                             } else {
                                 // Empty out Pension and extract remaining target deficit from ISA
                                 const maxPensionCanGiveGross = pension_pool;
                                 pension_pool = 0;
 
                                 const taxablePensionPortion = maxPensionCanGiveGross * 0.75;
-                                const maxPensionCanGiveNet = (maxPensionCanGiveGross * 0.25) + (taxablePensionPortion - (calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true).tax - calculateUKIncomeTaxAndNI(activeStatePension, true).tax));
+                                const maxPensionCanGiveNet = (maxPensionCanGiveGross * 0.25) + (taxablePensionPortion - (calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true, config.is_scottish).tax - calculateUKIncomeTaxAndNI(activeStatePension, true, config.is_scottish).tax));
                                 
                                 grossDrawnFromPension = maxPensionCanGiveGross;
-                                taxPaidThisYear = calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true).tax - calculateUKIncomeTaxAndNI(activeStatePension, true).tax;
+                                taxPaidThisYear = calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true, config.is_scottish).tax - calculateUKIncomeTaxAndNI(activeStatePension, true, config.is_scottish).tax;
 
                                 const isaGap = Math.max(0, netRequiredFromPortfolio - maxPensionCanGiveNet);
                                 drawnFromISA = Math.min(isa_pool, isaGap);
@@ -895,7 +1025,7 @@
                                     £{projectionData.cumulativeContributionsPension.toLocaleString(undefined, { maximumFractionDigits: 0 })} / £{projectionData.cumulativeContributionsISA.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </div>
                             </div>
-                            <div className="metric-sub">Total lifetime additions</div>
+                            <div className="metric-sub">Total lifetime out-of-pocket additions</div>
                         </div>
                     </div>
 
@@ -904,7 +1034,7 @@
                             {/* Input Parameters Sidebar Control Column */}
                             <div className="panel-sidebar">
                                 <div className="form-block">
-                                    <h3 className="card-subtitle">1. Temporal Bounds</h3>
+                                    <h3 className="card-subtitle">1. Temporal Bounds & Tax Profile</h3>
                                     <div className="form-grid-2">
                                         <div>
                                             <label>Current Age</label>
@@ -925,6 +1055,32 @@
                                                 value={config.target_age}
                                                 onChange={(e) => handleConfigChange('target_age', e.target.value)}
                                             />
+                                        </div>
+                                    </div>
+                                    <div className="form-grid-2">
+                                        <div>
+                                            <label>Tax Region</label>
+                                            <select
+                                                value={config.is_scottish}
+                                                onChange={(e) => setConfig(prev => ({ ...prev, is_scottish: e.target.value === 'true' }))}
+                                            >
+                                                <option value="false">UK Standard</option>
+                                                <option value="true">Scotland</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label>Student Loan</label>
+                                            <select
+                                                value={config.student_loan_plan}
+                                                onChange={(e) => setConfig(prev => ({ ...prev, student_loan_plan: e.target.value }))}
+                                            >
+                                                <option value="None">No Loan</option>
+                                                <option value="Plan1">Plan 1</option>
+                                                <option value="Plan2">Plan 2</option>
+                                                <option value="Plan5">Plan 5</option>
+                                                <option value="Postgrad">Postgraduate</option>
+                                                <option value="Plan2_Postgrad">Plan 2 + Postgrad</option>
+                                            </select>
                                         </div>
                                     </div>
                                     <div>
@@ -1019,18 +1175,43 @@
                                             <option value="net_pay">Net Pay (Saves Income Tax Only)</option>
                                         </select>
                                     </div>
-                                    <div>
-                                        <label>ISA Allocation (% of Net Pay)</label>
-                                        <input
-                                            type="number"
-                                            step="0.5"
-                                            value={config.isa_contribution_percent}
-                                            onChange={(e) => handleConfigChange('isa_contribution_percent', e.target.value)}
-                                        />
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
-                                            Subject to statutory £20,000 yearly cap.
-                                        </span>
+                                    
+                                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                                        <label style={{ marginBottom: '0.75rem', color: 'var(--text-primary)' }}>ISA Allocation (% of Net Pay)</label>
+                                        <div className="form-grid-2">
+                                            <div>
+                                                <label>Cash ISA (%)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.5"
+                                                    value={config.cash_isa_percent}
+                                                    onChange={(e) => handleConfigChange('cash_isa_percent', e.target.value)}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label>Stocks ISA (%)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.5"
+                                                    value={config.stocks_isa_percent}
+                                                    onChange={(e) => handleConfigChange('stocks_isa_percent', e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div style={{ marginTop: '1rem' }}>
+                                            <label>Lifetime ISA (%)</label>
+                                            <input
+                                                type="number"
+                                                step="0.5"
+                                                value={config.lisa_percent}
+                                                onChange={(e) => handleConfigChange('lisa_percent', e.target.value)}
+                                            />
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
+                                                Max £4,000/yr. Gov adds 25% bonus automatically in engine.
+                                            </span>
+                                        </div>
                                     </div>
+
                                     <div>
                                         <label>Pre-Retirement Monthly Bills (£)</label>
                                         <input
@@ -1316,8 +1497,10 @@
                                                     <th>Age</th>
                                                     <th>Gross Salary</th>
                                                     <th>Net Take-Home</th>
+                                                    <th>Student Loan</th>
                                                     <th>Pension Addition</th>
-                                                    <th>ISA Addition</th>
+                                                    <th>ISA Dep (Net)</th>
+                                                    <th>LISA Bonus</th>
                                                     <th>Living Expenses</th>
                                                     <th>Surplus Cash</th>
                                                     <th>Pension Balance</th>
@@ -1333,8 +1516,10 @@
                                                         <td style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{row.age}</td>
                                                         <td>£{row.salary.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                                         <td style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>£{row.netTakeHome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td style={{ color: 'var(--swiss-red)' }}>£{row.studentLoanDeduction.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                                         <td style={{ color: '#00cc66' }}>£{row.pensionAdded.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                                         <td style={{ color: '#00a3ff' }}>£{row.isaAdded.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td style={{ color: '#00a3ff' }}>£{row.lisaBonusAdded.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                                         <td>£{row.bills.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                                         <td style={{ color: row.discretionary >= 0 ? 'var(--text-primary)' : 'var(--swiss-red)' }}>
                                                             £{row.discretionary.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -1410,7 +1595,7 @@
                                     <div className="item-details">
                                         <h3 className="item-heading">Salary Sacrifice vs Net Pay Arrangements</h3>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                            Under a Salary Sacrifice framework, employee contributions are deducted from gross earnings before Income Tax and National Insurance calculation, yielding immediate tax and NI savings. Net Pay arrangements also grant immediate Income Tax relief, but do not provide National Insurance savings. Lifetime retirement plans should monitor annual pension contributions to stay within the £60,000 statutory tax-free allowance limit.
+                                            Under a Salary Sacrifice framework, employee contributions are deducted from gross earnings before Income Tax, National Insurance, and Student Loan calculation, yielding immediate multidimensional savings. Net Pay arrangements also grant immediate Income Tax relief, but do not provide National Insurance or Student Loan contribution savings. Lifetime retirement plans should monitor annual pension contributions to stay within the £60,000 statutory tax-free allowance limit.
                                         </p>
                                     </div>
                                 </div>
@@ -1419,7 +1604,7 @@
                                     <div className="item-details">
                                         <h3 className="item-heading">The £20,000 Individual Savings Account (ISA) Shield</h3>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                            The Individual Savings Account (ISA) remains a highly versatile tool in UK wealth optimization. Although contributions must be sourced from post-tax earnings, capital returns and future withdrawals are completely exempt from UK Capital Gains and Income Taxes. Integrating an ISA alongside pension assets creates a valuable tax-free reserve to draw from in retirement.
+                                            The Individual Savings Account (ISA) remains a highly versatile tool in UK wealth optimization. Although contributions must be sourced from post-tax earnings, capital returns and future withdrawals are completely exempt from UK Capital Gains and Income Taxes. Integrating an ISA alongside pension assets creates a valuable tax-free reserve to draw from in retirement. Limits will adjust dynamically for those under 65 starting in 2027.
                                         </p>
                                     </div>
                                 </div>
@@ -1449,4 +1634,3 @@
     </script>
 </body>
 </html>
---- END OF FILE finance.html ---
