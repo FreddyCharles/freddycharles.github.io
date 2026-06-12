@@ -1,3 +1,4 @@
+--- START OF FILE finance.html ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,7 +78,7 @@
             border-bottom: 1px solid var(--border-color);
         }
         .metric-card {
-            padding: 2.2rem 2rem;
+            padding: 2rem;
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
@@ -88,7 +89,7 @@
         }
         .metric-value {
             font-family: var(--font-mono);
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 700;
             color: var(--text-primary);
             margin-top: 0.5rem;
@@ -112,13 +113,13 @@
             flex-direction: column;
             border-bottom: 1px solid var(--border-color);
         }
-        @media (min-width: 992px) {
+        @media (min-width: 1200px) {
             .panel-row {
                 flex-direction: row;
             }
         }
         .panel-sidebar {
-            flex: 0 0 360px;
+            flex: 0 0 380px;
             border-right: none;
             border-bottom: 1px solid var(--border-color);
             padding: 2.5rem 2rem;
@@ -127,7 +128,7 @@
             gap: 2rem;
             background: rgba(8, 8, 10, 0.4);
         }
-        @media (min-width: 992px) {
+        @media (min-width: 1200px) {
             .panel-sidebar {
                 border-right: 1px solid var(--border-color);
                 border-bottom: none;
@@ -139,6 +140,7 @@
             display: flex;
             flex-direction: column;
             gap: 2.5rem;
+            overflow-x: hidden;
         }
 
         /* High-contrast custom scrollbar */
@@ -160,6 +162,7 @@
         .swiss-table-container {
             overflow-x: auto;
             border: 1px solid var(--border-color);
+            background: #08080a;
         }
         .swiss-table {
             width: 100%;
@@ -167,6 +170,7 @@
             font-family: var(--font-mono);
             font-size: 0.7rem;
             text-align: left;
+            white-space: nowrap;
         }
         .swiss-table th {
             background: #0c0c0e;
@@ -265,6 +269,7 @@
 
         .chart-legend {
             display: flex;
+            flex-wrap: wrap;
             gap: 1rem;
             font-family: var(--font-mono);
             font-size: 0.65rem;
@@ -275,6 +280,16 @@
             align-items: center;
             gap: 0.35rem;
         }
+        .badge-warning {
+            color: #ff9500;
+            border: 1px solid #ff9500;
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+            display: inline-block;
+            margin-top: 0.25rem;
+        }
     </style>
 </head>
 <body>
@@ -283,18 +298,8 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // Vector System Icons
+        // Vector Icons
         const Icons = {
-            Sparkles: () => (
-                <svg className="svg-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                </svg>
-            ),
-            TrendingUp: () => (
-                <svg className="svg-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-            ),
             Plus: () => (
                 <svg className="svg-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -304,29 +309,20 @@
                 <svg className="svg-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-            ),
-            Info: () => (
-                <svg className="svg-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            ),
-            Heart: () => (
-                <svg className="svg-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
             )
         };
 
-        // Standard UK Income Tax & National Insurance Calculator
-        function estimateUKTakeHome(salary, age) {
+        // Standard UK Income Tax & National Insurance Engine (2024/2025 Standard Rules)
+        function calculateUKIncomeTaxAndNI(grossIncome, isRetirement = false) {
+            // Personal Allowance taper rules (£1 down for every £2 over £100k)
             let personalAllowance = 12570;
-            if (salary > 100000) {
-                const reduction = (salary - 100000) / 2;
+            if (grossIncome > 100000) {
+                const reduction = (grossIncome - 100000) / 2;
                 personalAllowance = Math.max(0, 12570 - reduction);
             }
 
             let tax = 0;
-            let remainingTaxable = Math.max(0, salary - personalAllowance);
+            let remainingTaxable = Math.max(0, grossIncome - personalAllowance);
 
             const basicRateMax = 37700;
             const basicRateTaxable = Math.min(remainingTaxable, basicRateMax);
@@ -342,78 +338,119 @@
                 tax += remainingTaxable * 0.45;
             }
 
+            // NI Class 1 Primary Rules (No NI applied on pension withdrawals in retirement)
             let ni = 0;
-            if (salary > 12570) {
-                const standardBandEarnings = Math.min(salary, 50270) - 12570;
+            if (!isRetirement && grossIncome > 12570) {
+                const standardBandEarnings = Math.min(grossIncome, 50270) - 12570;
                 ni += standardBandEarnings * 0.08;
 
-                if (salary > 50270) {
-                    const upperBandEarnings = salary - 50270;
+                if (grossIncome > 50270) {
+                    const upperBandEarnings = grossIncome - 50270;
                     ni += upperBandEarnings * 0.02;
                 }
             }
 
-            const takeHome = Math.max(0, salary - tax - ni);
-            return { tax, ni, takeHome, isTaxFree: false };
+            return { tax, ni, net: Math.max(0, grossIncome - tax - ni) };
+        }
+
+        // Numerical Solver to find the required gross pension withdrawal matching a target net payout.
+        // Accounts for existing taxable income (e.g. State Pension) and the 25% tax-free lump sum (UFPLS).
+        function solveGrossPensionWithdrawal(targetNetNeeded, otherTaxableIncome = 0) {
+            if (targetNetNeeded <= 0) return 0;
+            
+            let low = targetNetNeeded;
+            let high = targetNetNeeded * 4; 
+            let iterations = 0;
+            let solvedGross = targetNetNeeded;
+
+            while (high - low > 0.01 && iterations < 50) {
+                const mid = (low + high) / 2;
+                
+                // Under UFPLS rules, 25% of withdrawal is tax-free, 75% is taxable
+                const taxFreeComponent = mid * 0.25;
+                const taxableComponent = mid * 0.75;
+
+                // Evaluate marginal tax added onto other taxable income
+                const taxWithOnlyOtherIncome = calculateUKIncomeTaxAndNI(otherTaxableIncome, true).tax;
+                const totalTaxWithWithdrawal = calculateUKIncomeTaxAndNI(otherTaxableIncome + taxableComponent, true).tax;
+                const marginalTaxOwed = totalTaxWithWithdrawal - taxWithOnlyOtherIncome;
+
+                const netResult = taxFreeComponent + (taxableComponent - marginalTaxOwed);
+
+                if (netResult < targetNetNeeded) {
+                    low = mid;
+                } else {
+                    high = mid;
+                }
+                solvedGross = mid;
+                iterations++;
+            }
+
+            return solvedGross;
         }
 
         function App() {
-            // General structural planning parameters
+            // Initial Baseline Parameters matching UK-specific scenarios
             const initialData = {
-                current_age: 25,
-                target_age: 65,
-                current_balance: 10000,
-                current_salary: 40000, 
+                current_age: 30,
+                target_age: 60,
+                current_pension_balance: 30000,
+                current_isa_balance: 10000,
+                current_salary: 55000, 
                 annual_salary_growth_percent: 2.5,
-                contribution_percent: 10.0, 
-                expected_return_percent: 7.0,
+                
+                // UK Pension Configurations
+                employee_pension_percent: 6.0, 
+                employer_pension_percent: 4.0, 
+                pension_contribution_type: 'salary_sacrifice', // 'salary_sacrifice' or 'net_pay'
+                
+                // UK ISA Configurations
+                isa_contribution_percent: 8.0, // savings rate from net take-home
+                
+                // Generic Projections
+                expected_return_percent: 6.5,
                 inflation_percent: 2.5,
-                monthly_bills: 1500, 
-                retire_annual_spend_today: 35000, 
-                retire_growth_percent: 4.0, 
-                drawdown_phases: [
-                    { id: 101, start_age: 35, end_age: 50, start_percent: 0, end_percent: 25, description: "Phase 1: Partial Skim / Real Estate Supplement" },
-                    { id: 102, start_age: 50, end_age: 65, start_percent: 25, end_percent: 50, description: "Phase 2: Late-Career Restructuring" }
-                ],
+                monthly_bills: 1800, 
+                
+                // Decumulation Parameters
+                retire_annual_spend_today: 32000, 
+                retire_growth_percent: 4.5, 
+                decumulation_strategy: 'isa_first', // 'isa_first' or 'pension_first'
+                
+                // State Pension Configuration
+                state_pension_active: true,
+                state_pension_age: 67,
+                state_pension_amount_today: 11502, // 2024/25 full State Pension rate
+
                 events: [
-                    { id: 1, age: 30, type: 'salary_change', value: 55000, description: 'First Career Stage Advancement' },
-                    { id: 2, age: 35, type: 'expense', value: 30000, description: 'Major Real Estate Deposit' },
-                    { id: 3, age: 40, type: 'salary_change', value: 75000, description: 'Senior Transition' },
-                    { id: 4, age: 45, type: 'contribution_change', value: 15, description: 'Enhanced Portfolio Scaling' },
-                    { id: 5, age: 50, type: 'salary_change', value: 95000, description: 'Late-Career Specialization Focus' }
+                    { id: 1, age: 40, type: 'salary_change', value: 75000, description: 'Promotion to Lead Practice Specialist' },
+                    { id: 2, age: 50, type: 'salary_change', value: 95000, description: 'Principal Director Transition' }
                 ]
             };
 
             const [config, setConfig] = useState(() => {
-                const saved = localStorage.getItem("wealth_navigator_config_generic");
+                const saved = localStorage.getItem("high_fidelity_wealth_config");
                 return saved ? JSON.parse(saved) : initialData;
             });
 
             const [activeTab, setActiveTab] = useState('projection'); 
-            const [newEvent, setNewEvent] = useState({ age: 30, type: 'salary_change', value: '', description: '' });
-            const [newPhase, setNewPhase] = useState({ start_age: 35, end_age: 50, start_percent: 0, end_percent: 25, description: 'Custom Drawdown Stage' });
-            
+            const [newEvent, setNewEvent] = useState({ age: 45, type: 'salary_change', value: '', description: '' });
             const [validationError, setValidationError] = useState('');
-            const [phaseError, setPhaseError] = useState('');
 
             useEffect(() => {
-                localStorage.setItem("wealth_navigator_config_generic", JSON.stringify(config));
+                localStorage.setItem("high_fidelity_wealth_config", JSON.stringify(config));
             }, [config]);
 
             const handleConfigChange = (key, value) => {
-                let sanitizedValue = value;
-                if (key === 'current_age') {
-                    sanitizedValue = Math.max(1, Math.min(100, value));
-                } else if (key === 'target_age') {
-                    sanitizedValue = Math.max(1, Math.min(110, value));
-                } else if (key === 'monthly_bills') {
-                    sanitizedValue = Math.max(0, value);
-                } else if (key === 'retire_annual_spend_today') {
-                    sanitizedValue = Math.max(0, value);
-                } else if (key === 'retire_growth_percent') {
-                    sanitizedValue = Math.max(0, value);
+                let sanitized = value;
+                if (['current_age', 'target_age', 'state_pension_age'].includes(key)) {
+                    sanitized = Math.max(1, Math.min(110, parseInt(value) || 0));
+                } else if (['current_pension_balance', 'current_isa_balance', 'current_salary', 'monthly_bills', 'retire_annual_spend_today', 'state_pension_amount_today'].includes(key)) {
+                    sanitized = Math.max(0, parseFloat(value) || 0);
+                } else if (['employee_pension_percent', 'employer_pension_percent', 'isa_contribution_percent', 'expected_return_percent', 'inflation_percent', 'annual_salary_growth_percent', 'retire_growth_percent'].includes(key)) {
+                    sanitized = Math.max(0, parseFloat(value) || 0);
                 }
-                setConfig(prev => ({ ...prev, [key]: sanitizedValue }));
+                setConfig(prev => ({ ...prev, [key]: sanitized }));
             };
 
             const addEvent = () => {
@@ -423,11 +460,11 @@
                 const eventDesc = newEvent.description.trim();
 
                 if (isNaN(eventAge) || eventAge < config.current_age || eventAge > config.target_age) {
-                    setValidationError(`Age must be between current age (${config.current_age}) and target retirement age (${config.target_age}).`);
+                    setValidationError(`Age must be between current age (${config.current_age}) and retirement age (${config.target_age}).`);
                     return;
                 }
                 if (isNaN(eventVal) || eventVal < 0) {
-                    setValidationError('Value must be a valid non-negative number.');
+                    setValidationError('Provide a valid non-negative numeric modifier value.');
                     return;
                 }
                 if (!eventDesc) {
@@ -447,7 +484,7 @@
                     ...prev,
                     events: [...prev.events, eventObj].sort((a, b) => a.age - b.age)
                 }));
-                setNewEvent({ age: Math.min(config.target_age, Math.max(config.current_age, 30)), type: 'salary_change', value: '', description: '' });
+                setNewEvent({ age: Math.min(config.target_age, Math.max(config.current_age, 45)), type: 'salary_change', value: '', description: '' });
             };
 
             const removeEvent = (id) => {
@@ -457,253 +494,277 @@
                 }));
             };
 
-            const addDrawdownPhase = () => {
-                setPhaseError('');
-                const startAge = parseInt(newPhase.start_age);
-                const endAge = parseInt(newPhase.end_age);
-                const startPct = parseFloat(newPhase.start_percent);
-                const endPct = parseFloat(newPhase.end_percent);
-                const desc = newPhase.description.trim();
-
-                if (isNaN(startAge) || startAge < config.current_age || startAge > config.target_age) {
-                    setPhaseError(`Start age must be between current age (${config.current_age}) and target retirement age (${config.target_age}).`);
-                    return;
-                }
-                if (isNaN(endAge) || endAge < startAge || endAge > config.target_age) {
-                    setPhaseError(`End age must be greater than or equal to start age (${startAge}) and less than target retirement age.`);
-                    return;
-                }
-                if (isNaN(startPct) || startPct < 0 || startPct > 100 || isNaN(endPct) || endPct < 0 || endPct > 100) {
-                    setPhaseError('Skim portion values must be between 0% and 100%.');
-                    return;
-                }
-                if (!desc) {
-                    setPhaseError('Provide a short description for this stage identifier.');
-                    return;
-                }
-
-                const phaseObj = {
-                    id: Date.now(),
-                    start_age: startAge,
-                    end_age: endAge,
-                    start_percent: startPct,
-                    end_percent: endPct,
-                    description: desc
-                };
-
-                setConfig(prev => ({
-                    ...prev,
-                    drawdown_phases: [...(prev.drawdown_phases || []), phaseObj].sort((a, b) => a.start_age - b.start_age)
-                }));
-                setNewPhase({ start_age: endAge, end_age: Math.min(config.target_age, endAge + 10), start_percent: endPct, end_percent: Math.min(100, endPct + 15), description: 'Next Drawdown Phase' });
-            };
-
-            const removeDrawdownPhase = (id) => {
-                setConfig(prev => ({
-                    ...prev,
-                    drawdown_phases: (prev.drawdown_phases || []).filter(p => p.id !== id)
-                }));
-            };
-
             const resetToDefault = () => {
-                if (window.confirm("Restore default structural parameters?")) {
+                if (window.confirm("Restore default structural parameter profile?")) {
                     setConfig(initialData);
-                    localStorage.setItem("wealth_navigator_config_generic", JSON.stringify(initialData));
+                    localStorage.setItem("high_fidelity_wealth_config", JSON.stringify(initialData));
                 }
             };
 
-            // Master Multi-Engine Projection
+            // Master Dual-Engine Core Projection Loop
             const projectionData = useMemo(() => {
-                const current_age = Math.max(1, Math.min(100, parseInt(config.current_age) || 25));
-                let target_age = Math.max(current_age, Math.min(110, parseInt(config.target_age) || 65));
-                
-                if (target_age - current_age > 90) {
-                    target_age = current_age + 90;
+                const current_age = Math.max(1, Math.min(100, parseInt(config.current_age) || 30));
+                let target_age = Math.max(current_age, Math.min(110, parseInt(config.target_age) || 60));
+
+                if (target_age - current_age > 80) {
+                    target_age = current_age + 80;
                 }
 
-                let balance = parseFloat(config.current_balance) || 0;
+                let pension_balance = parseFloat(config.current_pension_balance) || 0;
+                let isa_balance = parseFloat(config.current_isa_balance) || 0;
                 let salary = parseFloat(config.current_salary) || 0;
-                let contrib_rate = parseFloat(config.contribution_percent) || 0;
+                let employee_pension_percent = parseFloat(config.employee_pension_percent) || 0;
+                let employer_pension_percent = parseFloat(config.employer_pension_percent) || 0;
+                let isa_percent = parseFloat(config.isa_contribution_percent) || 0;
                 const monthly_bills_base = parseFloat(config.monthly_bills) || 0;
 
                 const return_rate = (parseFloat(config.expected_return_percent) || 0) / 100;
                 const inflation_rate = (parseFloat(config.inflation_percent) || 0) / 100;
-                const default_salary_growth = (parseFloat(config.annual_salary_growth_percent) || 0) / 100;
+                const wage_growth = (parseFloat(config.annual_salary_growth_percent) || 0) / 100;
 
                 const events = config.events || [];
-                const drawdown_phases = config.drawdown_phases || [];
                 const dataPoints = [];
-                let totalContributed = 0;
-                let cumulativeNominalInterestDrawn = 0;
-                let cumulativeRealInterestDrawn = 0;
+                
+                let cumulativeContributionsPension = 0;
+                let cumulativeContributionsISA = 0;
+                let annualPensionAllowanceWarningTriggered = false;
 
-                for (let age = current_age; age <= target_age; age++) {
+                for (let age = current_age; age < target_age; age++) {
                     const ageEvents = events.filter(e => e.age === age);
                     let systemMessage = "";
+
                     ageEvents.forEach(ev => {
                         if (ev.type === 'salary_change') {
                             salary = parseFloat(ev.value) || 0;
                             systemMessage += `Salary: £${salary.toLocaleString()}. `;
                         } else if (ev.type === 'contribution_change') {
-                            contrib_rate = parseFloat(ev.value) || 0;
-                            systemMessage += `Contribution Rate: ${contrib_rate}%. `;
+                            employee_pension_percent = parseFloat(ev.value) || 0;
+                            systemMessage += `Ee Contribution: ${employee_pension_percent}%. `;
                         } else if (ev.type === 'expense') {
-                            balance -= parseFloat(ev.value) || 0;
-                            systemMessage += `Withdrew £${ev.value.toLocaleString()} (${ev.description}). `;
+                            isa_balance = Math.max(0, isa_balance - (parseFloat(ev.value) || 0));
+                            systemMessage += `Withdrew £${ev.value.toLocaleString()} from ISA (${ev.description}). `;
                         } else if (ev.type === 'windfall') {
-                            balance += parseFloat(ev.value) || 0;
-                            systemMessage += `Injected £${ev.value.toLocaleString()} (${ev.description}). `;
+                            isa_balance += parseFloat(ev.value) || 0;
+                            systemMessage += `Injected £${ev.value.toLocaleString()} into ISA (${ev.description}). `;
                         }
                     });
 
-                    let yearly_contribution = salary * (contrib_rate / 100);
-                    totalContributed += yearly_contribution;
+                    // 1. Calculate Pension Contributions
+                    const employeePensionContribution = salary * (employee_pension_percent / 100);
+                    const employerPensionContribution = salary * (employer_pension_percent / 100);
+                    const totalAnnualPensionContribution = employeePensionContribution + employerPensionContribution;
 
-                    const taxMetrics = estimateUKTakeHome(salary, age);
-
-                    const years_passed = age - current_age;
-                    const annual_bills_inflated = (monthly_bills_base * 12) * Math.pow(1 + inflation_rate, years_passed);
-
-                    const discretionaryIncome = taxMetrics.takeHome - yearly_contribution - annual_bills_inflated;
-
-                    const interestEarned = balance * return_rate;
-                    
-                    let activePhase = drawdown_phases.find(p => age >= p.start_age && age <= p.end_age);
-                    let yearly_skim_rate = 0;
-                    if (activePhase) {
-                        const span = activePhase.end_age - activePhase.start_age;
-                        if (span === 0) {
-                            yearly_skim_rate = activePhase.start_percent / 100;
-                        } else {
-                            const progress = (age - activePhase.start_age) / span;
-                            yearly_skim_rate = (activePhase.start_percent + progress * (activePhase.end_percent - activePhase.start_percent)) / 100;
-                        }
+                    if (totalAnnualPensionContribution > 60000) {
+                        annualPensionAllowanceWarningTriggered = true;
                     }
 
-                    let interestDrawnThisYear = interestEarned * yearly_skim_rate;
-                    const compoundedInterest = interestEarned - interestDrawnThisYear;
-                    cumulativeNominalInterestDrawn += interestDrawnThisYear;
+                    // 2. Compute Net Take-Home Pay based on UK Pension Arrangement Scheme
+                    let taxableIncome = salary;
+                    let taxAndNI = { tax: 0, ni: 0, net: 0 };
+                    let actualNetTakeHome = 0;
 
-                    balance = balance + compoundedInterest + yearly_contribution;
+                    if (config.pension_contribution_type === 'salary_sacrifice') {
+                        // Salary sacrifice lowers Gross salary directly before Tax and NI calculations
+                        taxableIncome = Math.max(0, salary - employeePensionContribution);
+                        taxAndNI = calculateUKIncomeTaxAndNI(taxableIncome, false);
+                        actualNetTakeHome = taxAndNI.net;
+                    } else {
+                        // Net Pay Arrangement: Lower taxable gross before tax calculations, but NI is paid on full salary
+                        const taxOnlyAdjusted = Math.max(0, salary - employeePensionContribution);
+                        const fullTaxAndNI = calculateUKIncomeTaxAndNI(salary, false);
+                        const taxOnAdjusted = calculateUKIncomeTaxAndNI(taxOnlyAdjusted, false).tax;
+                        
+                        actualNetTakeHome = salary - taxOnAdjusted - fullTaxAndNI.ni - employeePensionContribution;
+                    }
 
-                    const real_balance = balance / Math.pow(1 + inflation_rate, years_passed);
-                    
-                    const nominalCombinedSpending = discretionaryIncome + interestDrawnThisYear;
-                    const realCombinedSpending = nominalCombinedSpending / Math.pow(1 + inflation_rate, years_passed);
+                    // 3. Compute ISA Savings (Capped at UK Statutory £20,000 threshold)
+                    let isaAddedThisYear = actualNetTakeHome * (isa_percent / 100);
+                    if (isaAddedThisYear > 20000) {
+                        isaAddedThisYear = 20000;
+                        systemMessage += "ISA cap reached (£20,000 max). ";
+                    }
 
-                    const realInterestDrawnThisYear = interestDrawnThisYear / Math.pow(1 + inflation_rate, years_passed);
-                    cumulativeRealInterestDrawn += realInterestDrawnThisYear;
+                    // Accumulate records
+                    cumulativeContributionsPension += totalAnnualPensionContribution;
+                    cumulativeContributionsISA += isaAddedThisYear;
+
+                    // 4. Track Cost of Living Expenses
+                    const years_passed = age - current_age;
+                    const annual_bills_inflated = (monthly_bills_base * 12) * Math.pow(1 + inflation_rate, years_passed);
+                    const surplusDiscretionary = actualNetTakeHome - isaAddedThisYear - annual_bills_inflated;
+
+                    // 5. Portfolio Growth Compounding (End-of-Year Assumption)
+                    pension_balance = (pension_balance * (1 + return_rate)) + totalAnnualPensionContribution;
+                    isa_balance = (isa_balance * (1 + return_rate)) + isaAddedThisYear;
+
+                    const totalNominalCombined = pension_balance + isa_balance;
+                    const totalRealCombined = totalNominalCombined / Math.pow(1 + inflation_rate, years_passed);
 
                     dataPoints.push({
                         age,
                         salary,
-                        takeHome: taxMetrics.takeHome,
-                        contrib_rate,
-                        added: yearly_contribution,
+                        netTakeHome: actualNetTakeHome,
+                        pensionAdded: totalAnnualPensionContribution,
+                        isaAdded: isaAddedThisYear,
                         bills: annual_bills_inflated,
-                        discretionary: discretionaryIncome,
-                        interestEarned,
-                        skimRate: yearly_skim_rate * 100,
-                        interestDrawn: interestDrawnThisYear,
-                        nominalBalance: Math.max(0, balance),
-                        realBalance: Math.max(0, real_balance),
-                        realCombinedSpending: realCombinedSpending,
+                        discretionary: surplusDiscretionary,
+                        pensionBalance: pension_balance,
+                        isaBalance: isa_balance,
+                        nominalCombined: totalNominalCombined,
+                        realCombined: totalRealCombined,
                         eventLog: systemMessage.trim()
                     });
 
-                    salary = salary * (1 + default_salary_growth);
+                    // Update Salary for next cycle
+                    salary = salary * (1 + wage_growth);
                 }
 
-                return { dataPoints, totalContributed, cumulativeNominalInterestDrawn, cumulativeRealInterestDrawn };
+                return { 
+                    dataPoints, 
+                    cumulativeContributionsPension, 
+                    cumulativeContributionsISA,
+                    annualPensionAllowanceWarningTriggered,
+                    finalNominalPension: pension_balance,
+                    finalNominalISA: isa_balance
+                };
             }, [config]);
 
-            const finalMetrics = useMemo(() => {
-                const points = projectionData.dataPoints;
-                if (points.length === 0) return { nominal: 0, real: 0, contributed: 0, nominalDrawn: 0, realDrawn: 0 };
-                const lastPoint = points[points.length - 1];
-                return {
-                    nominal: lastPoint.nominalBalance,
-                    real: lastPoint.realBalance,
-                    contributed: projectionData.totalContributed,
-                    nominalDrawn: projectionData.cumulativeNominalInterestDrawn,
-                    realDrawn: projectionData.cumulativeRealInterestDrawn
-                };
-            }, [projectionData]);
+            // Master Decumulation Engine Simulator (UK Retrospective Tax-Managed Model)
+            const decumulationData = useMemo(() => {
+                const target_age = parseInt(config.target_age) || 60;
+                const current_age = parseInt(config.current_age) || 30;
+                
+                let pension_pool = projectionData.finalNominalPension;
+                let isa_pool = projectionData.finalNominalISA;
 
-            // Decumulation Phase Simulation
-            const retirementSimulation = useMemo(() => {
-                const target_age = parseInt(config.target_age) || 65;
-                const startBalance = finalMetrics.nominal;
-                const spendToday = parseFloat(config.retire_annual_spend_today) || 35000;
-                const growthRate = (parseFloat(config.retire_growth_percent) || 4.0) / 100;
+                const spendToday = parseFloat(config.retire_annual_spend_today) || 32000;
+                const growthRate = (parseFloat(config.retire_growth_percent) || 4.5) / 100;
                 const inflation_rate = (parseFloat(config.inflation_percent) || 2.5) / 100;
                 
-                const yearsAccumulating = target_age - (parseInt(config.current_age) || 25);
-                let inflatedAnnualSpending = spendToday * Math.pow(1 + inflation_rate, yearsAccumulating);
+                const yearsAccumulating = target_age - current_age;
+                let inflatedAnnualSpendingGoal = spendToday * Math.pow(1 + inflation_rate, yearsAccumulating);
 
-                let currentBalance = startBalance;
                 let age = target_age;
-                const simulationPoints = [];
+                const simPoints = [];
                 let runsOutAtAge = null;
                 const maxAgeSimulationLimit = 110;
 
                 while (age <= maxAgeSimulationLimit) {
-                    const interestEarned = currentBalance * growthRate;
-                    const balancePreSpending = currentBalance + interestEarned;
-                    const remainingBalance = balancePreSpending - inflatedAnnualSpending;
+                    const currentYearsElapsedTotal = yearsAccumulating + (age - target_age);
+                    
+                    // 1. Process State Pension contribution (Adjusted for cumulative inflation)
+                    let activeStatePension = 0;
+                    if (config.state_pension_active && age >= config.state_pension_age) {
+                        activeStatePension = (parseFloat(config.state_pension_amount_today) || 11502) * Math.pow(1 + inflation_rate, currentYearsElapsedTotal);
+                    }
 
-                    simulationPoints.push({
+                    // 2. Identify spending deficit needed from private balances
+                    const netRequiredFromPortfolio = Math.max(0, inflatedAnnualSpendingGoal - activeStatePension);
+
+                    let drawnFromISA = 0;
+                    let grossDrawnFromPension = 0;
+                    let taxPaidThisYear = 0;
+
+                    if (netRequiredFromPortfolio > 0) {
+                        if (config.decumulation_strategy === 'isa_first') {
+                            // Exhaust ISA pot first (withdrawn completely tax-free)
+                            if (isa_pool >= netRequiredFromPortfolio) {
+                                drawnFromISA = netRequiredFromPortfolio;
+                                isa_pool -= drawnFromISA;
+                            } else {
+                                drawnFromISA = isa_pool;
+                                isa_pool = 0;
+
+                                const pensionGap = netRequiredFromPortfolio - drawnFromISA;
+                                grossDrawnFromPension = solveGrossPensionWithdrawal(pensionGap, activeStatePension);
+                                
+                                const taxablePensionPortion = grossDrawnFromPension * 0.75;
+                                taxPaidThisYear = calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true).tax - calculateUKIncomeTaxAndNI(activeStatePension, true).tax;
+                                pension_pool = Math.max(0, pension_pool - grossDrawnFromPension);
+                            }
+                        } else {
+                            // Blended/Pension-First: Cover baseline gap with Pension pot where possible
+                            const grossPensionAttempt = solveGrossPensionWithdrawal(netRequiredFromPortfolio, activeStatePension);
+                            if (pension_pool >= grossPensionAttempt) {
+                                grossDrawnFromPension = grossPensionAttempt;
+                                pension_pool -= grossDrawnFromPension;
+
+                                const taxablePensionPortion = grossDrawnFromPension * 0.75;
+                                taxPaidThisYear = calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true).tax - calculateUKIncomeTaxAndNI(activeStatePension, true).tax;
+                            } else {
+                                // Empty out Pension and extract remaining target deficit from ISA
+                                const maxPensionCanGiveGross = pension_pool;
+                                pension_pool = 0;
+
+                                const taxablePensionPortion = maxPensionCanGiveGross * 0.75;
+                                const maxPensionCanGiveNet = (maxPensionCanGiveGross * 0.25) + (taxablePensionPortion - (calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true).tax - calculateUKIncomeTaxAndNI(activeStatePension, true).tax));
+                                
+                                grossDrawnFromPension = maxPensionCanGiveGross;
+                                taxPaidThisYear = calculateUKIncomeTaxAndNI(activeStatePension + taxablePensionPortion, true).tax - calculateUKIncomeTaxAndNI(activeStatePension, true).tax;
+
+                                const isaGap = Math.max(0, netRequiredFromPortfolio - maxPensionCanGiveNet);
+                                drawnFromISA = Math.min(isa_pool, isaGap);
+                                isa_pool = Math.max(0, isa_pool - drawnFromISA);
+                            }
+                        }
+                    }
+
+                    // 3. Compounding residual portfolio assets at end of fiscal cycle
+                    pension_pool = pension_pool * (1 + growthRate);
+                    isa_pool = isa_pool * (1 + growthRate);
+
+                    const closingCombinedNominal = pension_pool + isa_pool;
+                    const closingCombinedReal = closingCombinedNominal / Math.pow(1 + inflation_rate, currentYearsElapsedTotal);
+
+                    simPoints.push({
                         age,
-                        openingBalance: currentBalance,
-                        interestEarned,
-                        spending: inflatedAnnualSpending,
-                        closingBalance: Math.max(0, remainingBalance),
-                        realClosingBalance: Math.max(0, remainingBalance / Math.pow(1 + inflation_rate, yearsAccumulating + (age - target_age)))
+                        openingPension: pension_pool / (1 + growthRate) + grossDrawnFromPension,
+                        openingISA: isa_pool / (1 + growthRate) + drawnFromISA,
+                        statePensionReceived: activeStatePension,
+                        withdrawnISA: drawnFromISA,
+                        withdrawnPensionGross: grossDrawnFromPension,
+                        taxPaid: taxPaidThisYear,
+                        spendingDemanded: inflatedAnnualSpendingGoal,
+                        closingCombinedNominal,
+                        closingCombinedReal
                     });
 
-                    if (remainingBalance <= 0) {
+                    // Termination Condition
+                    if (closingCombinedNominal <= 0 && netRequiredFromPortfolio > (drawnFromISA + (grossDrawnFromPension * 0.25 + grossDrawnFromPension * 0.75 - taxPaidThisYear))) {
                         runsOutAtAge = age;
                         break;
                     }
 
-                    currentBalance = remainingBalance;
-                    inflatedAnnualSpending = inflatedAnnualSpending * (1 + inflation_rate);
+                    inflatedAnnualSpendingGoal = inflatedAnnualSpendingGoal * (1 + inflation_rate);
                     age++;
                 }
 
-                const longevityResultText = runsOutAtAge 
-                    ? `Capital exhaust triggered at age ${runsOutAtAge}. Total phase duration: ${runsOutAtAge - target_age} years.`
-                    : `Sustained asset preservation. Portfolio generation yield meets or outpaces depletion rate limits up to age ${maxAgeSimulationLimit}.`;
-
-                const statusColor = runsOutAtAge 
-                    ? (runsOutAtAge - target_age >= 25 ? 'border-color: var(--border-color); color: var(--text-primary);' : 'border-color: var(--swiss-red); color: var(--swiss-red);')
-                    : 'border-color: var(--border-color); color: var(--text-primary);';
+                const longevityReport = runsOutAtAge 
+                    ? `Capital exhaustion projection triggered at age ${runsOutAtAge}. Total security window: ${runsOutAtAge - target_age} years.`
+                    : `Sustained asset preservation. Portfolio yield structure outpaces depletion rate limits up to age ${maxAgeSimulationLimit}.`;
 
                 return {
-                    simulationPoints,
+                    simPoints,
                     runsOutAtAge,
-                    longevityResultText,
-                    statusColor,
-                    duration: runsOutAtAge ? runsOutAtAge - target_age : maxAgeSimulationLimit - target_age
+                    longevityReport
                 };
-            }, [config, finalMetrics]);
+            }, [config, projectionData]);
 
-            // SVG Line Chart Generator
+            // High Contrast SVG Chart Path Calculators
             const chartData = useMemo(() => {
                 const points = projectionData.dataPoints;
-                
                 const width = 800;
                 const height = 300;
-                const paddingLeft = 80;
-                const paddingRight = 20;
-                const paddingTop = 20;
+                const paddingLeft = 85;
+                const paddingRight = 25;
+                const paddingTop = 25;
                 const paddingBottom = 40;
 
                 if (points.length === 0) {
-                    return { nominalPath: "", realPath: "", gridLines: [], ageTicks: [], height, width, getX: () => 0, getY: () => 0 };
+                    return { pensionPath: "", isaPath: "", realPath: "", gridLines: [], ageTicks: [], height, width };
                 }
 
-                const maxBalance = Math.max(...points.map(p => p.nominalBalance), 1000) * 1.05;
+                const maxBalance = Math.max(...points.map(p => p.nominalCombined), 50000) * 1.05;
                 const minBalance = 0;
                 const balanceRange = maxBalance - minBalance || 1;
 
@@ -716,12 +777,14 @@
                     return height - paddingBottom - ((val - minBalance) / balanceRange) * (height - paddingTop - paddingBottom);
                 };
 
-                let nominalPath = `M ${getX(0)} ${getY(points[0].nominalBalance)} `;
-                let realPath = `M ${getX(0)} ${getY(points[0].realBalance)} `;
+                let pensionPath = `M ${getX(0)} ${getY(points[0].pensionBalance)} `;
+                let isaPath = `M ${getX(0)} ${getY(points[0].isaBalance)} `;
+                let realPath = `M ${getX(0)} ${getY(points[0].realCombined)} `;
 
                 for (let i = 1; i < points.length; i++) {
-                    nominalPath += `L ${getX(i)} ${getY(points[i].nominalBalance)} `;
-                    realPath += `L ${getX(i)} ${getY(points[i].realBalance)} `;
+                    pensionPath += `L ${getX(i)} ${getY(points[i].pensionBalance)} `;
+                    isaPath += `L ${getX(i)} ${getY(points[i].isaBalance)} `;
+                    realPath += `L ${getX(i)} ${getY(points[i].realCombined)} `;
                 }
 
                 const gridTicks = 5;
@@ -749,28 +812,26 @@
                     });
                 }
 
-                return { nominalPath, realPath, gridLines, ageTicks, height, width, getX, getY };
+                return { pensionPath, isaPath, realPath, gridLines, ageTicks, height, width };
             }, [projectionData]);
 
             return (
                 <div className="wrapper">
-                    {/* Header Block matching Portfolio Typography */}
                     <header>
                         <div className="header-title-box">
-                            <h1>WEALTH ENGINE<span className="accent-bullet">.</span></h1>
+                            <h1>WEALTH ENGINE PRO<span className="accent-bullet">.</span></h1>
                             <p className="intro-text">
-                                A high-fidelity capital asset accumulator and drawdown trajectory simulator. Project standard take-home compensation structures alongside complex dynamic lifecycle adjustments.
+                                High-fidelity capital accumulator and tax-optimized decumulation trajectory simulator matching UK-specific statutory frameworks.
                             </p>
                         </div>
                         <div className="header-meta-box">
                             <div>
-                                <div className="contact-header">SYSTEM ENGINE</div>
+                                <div className="contact-header">PLAN TYPE</div>
+                                <div>UK WORKPLACE / SIPP & ISA MODEL</div>
                                 <div>ACCUMULATION ENGINE: ACTIVE</div>
-                                <div>DECUMULATION ENGINE: ACTIVE</div>
                             </div>
                             <div style={{ marginTop: '1.5rem' }}>
-                                <div className="contact-header">PLAN PARAMETERS</div>
-                                <div>UK FISCAL STANDARD STRUCTURE</div>
+                                <div className="contact-header">SIMULATION PRESET</div>
                                 <button 
                                     onClick={resetToDefault}
                                     className="btn-action-secondary" 
@@ -782,7 +843,7 @@
                         </div>
                     </header>
 
-                    {/* Navigation Tab Strip */}
+                    {/* Navigation Bar */}
                     <div className="tab-nav">
                         <button
                             onClick={() => setActiveTab('projection')}
@@ -798,54 +859,52 @@
                         </button>
                     </div>
 
-                    {/* Real-time Metric Indicators */}
+                    {/* Monospace KPI Metrics Grid */}
                     <div className="metrics-grid">
                         <div className="metric-card">
                             <div>
-                                <div className="metric-label">Nest Egg (Nominal)</div>
+                                <div className="metric-label">Pension Pot (Nominal)</div>
                                 <div className="metric-value">
-                                    £{finalMetrics.nominal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                    £{projectionData.finalNominalPension.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </div>
                             </div>
-                            <div className="metric-sub">Asset scale reached at age {config.target_age}</div>
+                            <div className="metric-sub">Accumulated at age {config.target_age}</div>
                         </div>
                         <div className="metric-card">
                             <div>
-                                <div className="metric-label">Nest Egg (Real Power)</div>
+                                <div className="metric-label">ISA Pot (Nominal)</div>
+                                <div className="metric-value" style={{ color: 'var(--text-primary)' }}>
+                                    £{projectionData.finalNominalISA.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                </div>
+                            </div>
+                            <div className="metric-sub">Liquid tax-free capital accumulated</div>
+                        </div>
+                        <div className="metric-card">
+                            <div>
+                                <div className="metric-label">Purchasing Power (Real)</div>
                                 <div className="metric-value" style={{ color: 'var(--swiss-red)' }}>
-                                    £{finalMetrics.real.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                    £{(projectionData.finalNominalPension + projectionData.finalNominalISA > 0 ? (projectionData.dataPoints[projectionData.dataPoints.length - 1]?.realCombined || 0) : 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </div>
                             </div>
-                            <div className="metric-sub">Indexed to {config.inflation_percent}% constant inflation</div>
+                            <div className="metric-sub">Adjusted to inflation at {config.inflation_percent}%</div>
                         </div>
                         <div className="metric-card">
                             <div>
-                                <div className="metric-label">Principal Contributed</div>
-                                <div className="metric-value">
-                                    £{finalMetrics.contributed.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                <div className="metric-label">Contributions (Pensions / ISA)</div>
+                                <div className="metric-value" style={{ fontSize: '1.3rem' }}>
+                                    £{projectionData.cumulativeContributionsPension.toLocaleString(undefined, { maximumFractionDigits: 0 })} / £{projectionData.cumulativeContributionsISA.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </div>
                             </div>
-                            <div className="metric-sub">Cumulative total personal contributions</div>
-                        </div>
-                        <div className="metric-card">
-                            <div>
-                                <div className="metric-label">Harvested Cash Flow</div>
-                                <div className="metric-value">
-                                    £{finalMetrics.nominalDrawn.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                </div>
-                            </div>
-                            <div className="metric-sub">
-                                Real yield purchasing power: £{finalMetrics.realDrawn.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                            </div>
+                            <div className="metric-sub">Total lifetime additions</div>
                         </div>
                     </div>
 
                     {activeTab === 'projection' ? (
                         <div className="panel-row">
-                            {/* Input Sidebar controls */}
+                            {/* Input Parameters Sidebar Control Column */}
                             <div className="panel-sidebar">
                                 <div className="form-block">
-                                    <h3 className="card-subtitle">1. Base Configurations</h3>
+                                    <h3 className="card-subtitle">1. Temporal Bounds</h3>
                                     <div className="form-grid-2">
                                         <div>
                                             <label>Current Age</label>
@@ -854,210 +913,208 @@
                                                 min="1"
                                                 max="100"
                                                 value={config.current_age}
-                                                onChange={(e) => handleConfigChange('current_age', parseInt(e.target.value) || 25)}
+                                                onChange={(e) => handleConfigChange('current_age', e.target.value)}
                                             />
                                         </div>
                                         <div>
-                                            <label>Target Retirement</label>
+                                            <label>Retirement Age</label>
                                             <input
                                                 type="number"
                                                 min="1"
                                                 max="110"
                                                 value={config.target_age}
-                                                onChange={(e) => handleConfigChange('target_age', parseInt(e.target.value) || 65)}
+                                                onChange={(e) => handleConfigChange('target_age', e.target.value)}
                                             />
                                         </div>
                                     </div>
-
                                     <div>
-                                        <label>Starting Portfolio Value (£)</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={config.current_balance}
-                                            onChange={(e) => handleConfigChange('current_balance', parseFloat(e.target.value) || 0)}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label>Current Gross Annual Salary (£)</label>
+                                        <label>Starting Salary (£)</label>
                                         <input
                                             type="number"
                                             min="0"
                                             value={config.current_salary}
-                                            onChange={(e) => handleConfigChange('current_salary', parseFloat(e.target.value) || 0)}
+                                            onChange={(e) => handleConfigChange('current_salary', e.target.value)}
                                         />
                                     </div>
-
-                                    <div>
-                                        <label>Estimated Monthly Bills (£)</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={config.monthly_bills}
-                                            onChange={(e) => handleConfigChange('monthly_bills', parseFloat(e.target.value) || 0)}
-                                        />
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
-                                            Annualized: £{((config.monthly_bills || 0) * 12).toLocaleString()}
-                                        </span>
-                                    </div>
-
                                     <div className="form-grid-2">
                                         <div>
-                                            <label>Wage Growth %</label>
+                                            <label>Salary Growth %</label>
                                             <input
                                                 type="number"
                                                 step="0.1"
-                                                min="0"
                                                 value={config.annual_salary_growth_percent}
-                                                onChange={(e) => handleConfigChange('annual_salary_growth_percent', parseFloat(e.target.value) || 0)}
+                                                onChange={(e) => handleConfigChange('annual_salary_growth_percent', e.target.value)}
                                             />
                                         </div>
                                         <div>
-                                            <label>Market Growth %</label>
+                                            <label>Market Return %</label>
                                             <input
                                                 type="number"
                                                 step="0.1"
-                                                min="0"
                                                 value={config.expected_return_percent}
-                                                onChange={(e) => handleConfigChange('expected_return_percent', parseFloat(e.target.value) || 0)}
+                                                onChange={(e) => handleConfigChange('expected_return_percent', e.target.value)}
                                             />
                                         </div>
                                     </div>
-
                                     <div>
-                                        <label>Constant Inflation Assumption %</label>
+                                        <label>Annual Inflation Rate %</label>
                                         <input
                                             type="number"
                                             step="0.1"
-                                            min="0"
                                             value={config.inflation_percent}
-                                            onChange={(e) => handleConfigChange('inflation_percent', parseFloat(e.target.value) || 0)}
+                                            onChange={(e) => handleConfigChange('inflation_percent', e.target.value)}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="form-block">
-                                    <h3 className="card-subtitle">2. Retirement Phase Assumptions</h3>
+                                    <h3 className="card-subtitle">2. UK Accumulation Wrappers</h3>
+                                    <div className="form-grid-2">
+                                        <div>
+                                            <label>Pension Starting (£)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={config.current_pension_balance}
+                                                onChange={(e) => handleConfigChange('current_pension_balance', e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label>ISA Starting (£)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={config.current_isa_balance}
+                                                onChange={(e) => handleConfigChange('current_isa_balance', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="form-grid-2">
+                                        <div>
+                                            <label>Employee Contrib %</label>
+                                            <input
+                                                type="number"
+                                                step="0.5"
+                                                value={config.employee_pension_percent}
+                                                onChange={(e) => handleConfigChange('employee_pension_percent', e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label>Employer Contrib %</label>
+                                            <input
+                                                type="number"
+                                                step="0.5"
+                                                value={config.employer_pension_percent}
+                                                onChange={(e) => handleConfigChange('employer_pension_percent', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
                                     <div>
-                                        <label>Target Annual Income (Today's £)</label>
+                                        <label>Pension Scheme Arrangement</label>
+                                        <select
+                                            value={config.pension_contribution_type}
+                                            onChange={(e) => handleConfigChange('pension_contribution_type', e.target.value)}
+                                        >
+                                            <option value="salary_sacrifice">Salary Sacrifice (Saves Tax & NI)</option>
+                                            <option value="net_pay">Net Pay (Saves Income Tax Only)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label>ISA Allocation (% of Net Pay)</label>
                                         <input
                                             type="number"
-                                            min="0"
-                                            value={config.retire_annual_spend_today}
-                                            onChange={(e) => handleConfigChange('retire_annual_spend_today', parseFloat(e.target.value) || 0)}
+                                            step="0.5"
+                                            value={config.isa_contribution_percent}
+                                            onChange={(e) => handleConfigChange('isa_contribution_percent', e.target.value)}
                                         />
                                         <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
-                                            Automatically adjusts for cumulative compound inflation.
+                                            Subject to statutory £20,000 yearly cap.
                                         </span>
                                     </div>
                                     <div>
-                                        <label>Retirement Annual Growth Rate %</label>
+                                        <label>Pre-Retirement Monthly Bills (£)</label>
                                         <input
                                             type="number"
-                                            step="0.1"
-                                            min="0"
-                                            value={config.retire_growth_percent}
-                                            onChange={(e) => handleConfigChange('retire_growth_percent', parseFloat(e.target.value) || 0)}
+                                            value={config.monthly_bills}
+                                            onChange={(e) => handleConfigChange('monthly_bills', e.target.value)}
                                         />
                                     </div>
+
+                                    {projectionData.annualPensionAllowanceWarningTriggered && (
+                                        <div className="badge-warning">
+                                            Warning: Annual Pension contributions exceed the £60,000 tax-free allowance cap.
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="form-block">
-                                    <h3 className="card-subtitle">3. Structured Drawdown Cycles</h3>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-                                        Establish multi-phase segments to extract/harvest specific return percentages while in accumulation.
-                                    </p>
-                                    
-                                    <div className="form-grid-2">
-                                        <div>
-                                            <label>Start Age</label>
-                                            <input
-                                                type="number"
-                                                min={config.current_age}
-                                                max={config.target_age}
-                                                value={newPhase.start_age}
-                                                onChange={(e) => setNewPhase(prev => ({ ...prev, start_age: parseInt(e.target.value) || 0 }))}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label>End Age</label>
-                                            <input
-                                                type="number"
-                                                min={newPhase.start_age}
-                                                max={config.target_age}
-                                                value={newPhase.end_age}
-                                                onChange={(e) => setNewPhase(prev => ({ ...prev, end_age: parseInt(e.target.value) || 0 }))}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="form-grid-2">
-                                        <div>
-                                            <label>Start Extract %</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={newPhase.start_percent}
-                                                onChange={(e) => setNewPhase(prev => ({ ...prev, start_percent: parseFloat(e.target.value) || 0 }))}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label>End Extract %</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={newPhase.end_percent}
-                                                onChange={(e) => setNewPhase(prev => ({ ...prev, end_percent: parseFloat(e.target.value) || 0 }))}
-                                            />
-                                        </div>
-                                    </div>
-
+                                    <h3 className="card-subtitle">3. Retirement & Decumulation</h3>
                                     <div>
-                                        <label>Description Label</label>
+                                        <label>Target Outflow (Today's £ / Yr)</label>
                                         <input
-                                            type="text"
-                                            value={newPhase.description}
-                                            onChange={(e) => setNewPhase(prev => ({ ...prev, description: e.target.value }))}
-                                            placeholder="e.g. Mid-Career Optimization"
+                                            type="number"
+                                            value={config.retire_annual_spend_today}
+                                            onChange={(e) => handleConfigChange('retire_annual_spend_today', e.target.value)}
                                         />
                                     </div>
-
-                                    {phaseError && (
-                                        <p style={{ color: 'var(--swiss-red)', fontSize: '0.7rem', fontWeight: 'bold' }}>{phaseError}</p>
-                                    )}
-
-                                    <button onClick={addDrawdownPhase} className="btn-action">
-                                        <Icons.Plus /> Save Drawdown Stage
-                                    </button>
-
-                                    <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                                        <label>Active Extractions</label>
-                                        {(config.drawdown_phases || []).length === 0 ? (
-                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>None configured. Return earnings fully reinvested.</p>
-                                        ) : (
-                                            (config.drawdown_phases || []).map((p) => (
-                                                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0c0c0e', padding: '0.5rem', border: '1px solid var(--border-color)', marginTop: '0.5rem' }}>
-                                                    <div>
-                                                        <div style={{ fontSize: '0.7rem', fontWeight: '700' }}>{p.description}</div>
-                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
-                                                            Ages {p.start_age}–{p.end_age} | Ramps {p.start_percent}% to {p.end_percent}%
-                                                        </div>
-                                                    </div>
-                                                    <button onClick={() => removeDrawdownPhase(p.id)} className="header-icon-btn" style={{ background: 'transparent', border: 'none' }}>
-                                                        <Icons.Trash />
-                                                    </button>
+                                    <div className="form-grid-2">
+                                        <div>
+                                            <label>Retire Growth Rate %</label>
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                value={config.retire_growth_percent}
+                                                onChange={(e) => handleConfigChange('retire_growth_percent', e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label>Outflow Method</label>
+                                            <select
+                                                value={config.decumulation_strategy}
+                                                onChange={(e) => handleConfigChange('decumulation_strategy', e.target.value)}
+                                            >
+                                                <option value="isa_first">Exhaust ISA First</option>
+                                                <option value="pension_first">Exhaust Pension First</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                                            <input
+                                                type="checkbox"
+                                                id="state_pension_active"
+                                                checked={config.state_pension_active}
+                                                onChange={(e) => setConfig(prev => ({ ...prev, state_pension_active: e.target.checked }))}
+                                                style={{ width: 'auto', accentColor: 'var(--swiss-red)' }}
+                                            />
+                                            <label htmlFor="state_pension_active" style={{ margin: 0, cursor: 'pointer' }}>Integrate UK State Pension</label>
+                                        </div>
+                                        {config.state_pension_active && (
+                                            <div className="form-grid-2">
+                                                <div>
+                                                    <label>State Pension Age</label>
+                                                    <input
+                                                        type="number"
+                                                        value={config.state_pension_age}
+                                                        onChange={(e) => handleConfigChange('state_pension_age', e.target.value)}
+                                                    />
                                                 </div>
-                                            ))
+                                                <div>
+                                                    <label>Annual Amount (£)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={config.state_pension_amount_today}
+                                                        onChange={(e) => handleConfigChange('state_pension_amount_today', e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
 
                                 <div className="form-block">
-                                    <h3 className="card-subtitle">4. Dynamics & Milestones</h3>
-                                    
+                                    <h3 className="card-subtitle">4. Life Milestones</h3>
                                     <div className="form-grid-2">
                                         <div>
                                             <label>Milestone Age</label>
@@ -1070,76 +1127,75 @@
                                             />
                                         </div>
                                         <div>
-                                            <label>Milestone Type</label>
+                                            <label>Adjustment Type</label>
                                             <select
                                                 value={newEvent.type}
                                                 onChange={(e) => setNewEvent(prev => ({ ...prev, type: e.target.value }))}
                                             >
                                                 <option value="salary_change">Salary Adjustment (£)</option>
-                                                <option value="contribution_change">Contribution Rate (%)</option>
+                                                <option value="contribution_change">Ee Pension Contrib (%)</option>
                                                 <option value="expense">Capital Withdrawal (£)</option>
                                                 <option value="windfall">Portfolio Injection (£)</option>
                                             </select>
                                         </div>
                                     </div>
-
                                     <div>
-                                        <label>Numeric Variable Value</label>
+                                        <label>Modifier Metric Value</label>
                                         <input
                                             type="number"
-                                            min="0"
                                             placeholder="Amount (£) or Rate (%)"
                                             value={newEvent.value}
                                             onChange={(e) => setNewEvent(prev => ({ ...prev, value: e.target.value }))}
                                         />
                                     </div>
-
                                     <div>
-                                        <label>Event Identifier Text</label>
+                                        <label>Milestone Label</label>
                                         <input
                                             type="text"
-                                            placeholder="e.g., Trajectory Step Adjustment"
+                                            placeholder="e.g. Senior Director Uplift"
                                             value={newEvent.description}
                                             onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
                                         />
                                     </div>
-
                                     {validationError && (
                                         <p style={{ color: 'var(--swiss-red)', fontSize: '0.7rem', fontWeight: 'bold' }}>{validationError}</p>
                                     )}
-
                                     <button onClick={addEvent} className="btn-action">
-                                        <Icons.Plus /> Append Trajectory Step
+                                        <Icons.Plus /> Append Milestone Event
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Main Content Workspace */}
+                            {/* Main Calculations Screen */}
                             <div className="panel-content">
                                 
-                                {/* Retirement Longevity Banner Box */}
+                                {/* Retirement Sustainability System Box */}
                                 <div className="info-panel" style={{ borderLeft: '3px solid var(--swiss-red)' }}>
-                                    <div className="info-panel-title">Retirement Sustainability Vector</div>
+                                    <div className="info-panel-title">Asset Longevity Projections</div>
                                     <p style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                                        {retirementSimulation.longevityResultText}
+                                        {decumulationData.longevityReport}
                                     </p>
                                     <p style={{ fontSize: '0.75rem' }}>
-                                        Targeting annual cash generation equivalent to £{(parseFloat(config.retire_annual_spend_today) || 0).toLocaleString()} in current purchasing power. Closing capital asset value at phase entry: £{finalMetrics.nominal.toLocaleString(undefined, { maximumFractionDigits: 0 })} at age {config.target_age}.
+                                        Targeting annual cash generation equivalent to £{(parseFloat(config.retire_annual_spend_today) || 0).toLocaleString()} in current purchasing power. Capital asset valuation at retirement entry: £{(projectionData.finalNominalPension + projectionData.finalNominalISA).toLocaleString(undefined, { maximumFractionDigits: 0 })} (Pension: £{projectionData.finalNominalPension.toLocaleString(undefined, { maximumFractionDigits: 0 })}, ISA: £{projectionData.finalNominalISA.toLocaleString(undefined, { maximumFractionDigits: 0 })}) at age {config.target_age}.
                                     </p>
                                 </div>
 
                                 {/* Dynamic Trajectory Diagram */}
-                                <div style={{ border: '1px solid var(--border-color)', padding: '1.5rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                        <h3 className="card-subtitle">Trajectory Curve Metric</h3>
+                                <div style={{ border: '1px solid var(--border-color)', padding: '1.5rem', background: '#08080a' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                                        <h3 className="card-subtitle" style={{ margin: 0 }}>Accumulation Projections</h3>
                                         <div className="chart-legend">
                                             <div className="legend-item">
                                                 <span style={{ width: '12px', height: '2px', background: 'var(--swiss-red)', display: 'inline-block' }}></span>
-                                                <span>Nominal Scale</span>
+                                                <span>Pension Pot</span>
                                             </div>
                                             <div className="legend-item">
-                                                <span style={{ width: '12px', height: '2px', background: 'var(--text-secondary)', display: 'inline-block' }}></span>
-                                                <span>Purchasing Power (Real)</span>
+                                                <span style={{ width: '12px', height: '2px', background: 'var(--text-primary)', display: 'inline-block' }}></span>
+                                                <span>ISA Pot</span>
+                                            </div>
+                                            <div className="legend-item">
+                                                <span style={{ width: '12px', height: '2px', strokeDasharray: '3,3', borderBottom: '2px dotted var(--text-secondary)', display: 'inline-block' }}></span>
+                                                <span>Combined (Real Value)</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1151,9 +1207,9 @@
                                                 {chartData.gridLines.map((line, idx) => (
                                                     <g key={idx}>
                                                         <line
-                                                            x1="80"
+                                                            x1="85"
                                                             y1={line.y}
-                                                            x2={chartData.width - 20}
+                                                            x2={chartData.width - 25}
                                                             y2={line.y}
                                                             stroke="var(--border-color)"
                                                             strokeWidth="1"
@@ -1168,7 +1224,7 @@
                                                     <g key={idx}>
                                                         <line
                                                             x1={tick.x}
-                                                            y1="20"
+                                                            y1="25"
                                                             x2={tick.x}
                                                             y2={chartData.height - 40}
                                                             stroke="var(--border-color)"
@@ -1180,11 +1236,20 @@
                                                 ))}
 
                                                 {/* Primary Curve Paths */}
-                                                {chartData.nominalPath && (
+                                                {chartData.pensionPath && (
                                                     <path
-                                                        d={chartData.nominalPath}
+                                                        d={chartData.pensionPath}
                                                         fill="none"
                                                         stroke="var(--swiss-red)"
+                                                        strokeWidth="2"
+                                                    />
+                                                )}
+
+                                                {chartData.isaPath && (
+                                                    <path
+                                                        d={chartData.isaPath}
+                                                        fill="none"
+                                                        stroke="var(--text-primary)"
                                                         strokeWidth="2"
                                                     />
                                                 )}
@@ -1194,24 +1259,25 @@
                                                         d={chartData.realPath}
                                                         fill="none"
                                                         stroke="var(--text-secondary)"
-                                                        strokeWidth="2"
+                                                        strokeWidth="1.5"
+                                                        strokeDasharray="4,3"
                                                     />
                                                 )}
                                             </svg>
                                         ) : (
                                             <div style={{ height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontStyle: 'italic', fontFamily: 'var(--font-mono)' }}>
-                                                No timeline data available.
+                                                Timeline metrics calculations pending...
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* Active Event Timelines */}
-                                <div style={{ border: '1px solid var(--border-color)', padding: '1.5rem' }}>
-                                    <h3 className="card-subtitle" style={{ marginBottom: '1rem' }}>Configured Event Timelines</h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '250px', overflowY: 'auto' }}>
+                                {/* Active Life Milestones Block */}
+                                <div style={{ border: '1px solid var(--border-color)', padding: '1.5rem', background: '#08080a' }}>
+                                    <h3 className="card-subtitle" style={{ marginBottom: '1rem' }}>Active Life Milestones</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '200px', overflowY: 'auto' }}>
                                         {config.events.length === 0 ? (
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>No timeline events appended.</p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>No custom timeline milestones saved.</p>
                                         ) : (
                                             config.events.map((ev) => (
                                                 <div key={ev.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: '#0c0c0e', border: '1px solid var(--border-color)' }}>
@@ -1222,11 +1288,11 @@
                                                         <div>
                                                             <div style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>{ev.description}</div>
                                                             <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-                                                                Type: {ev.type.replace('_', ' ')} | Modification: {ev.type === 'salary_change' || ev.type === 'expense' || ev.type === 'windfall' ? `£${ev.value.toLocaleString()}` : `${ev.value}%`}
+                                                                Type: {ev.type.replace('_', ' ')} | Value: {ev.type === 'salary_change' || ev.type === 'expense' || ev.type === 'windfall' ? `£${ev.value.toLocaleString()}` : `${ev.value}%`}
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <button onClick={() => removeEvent(ev.id)} className="header-icon-btn" style={{ background: 'transparent', border: 'none' }}>
+                                                    <button onClick={() => removeEvent(ev.id)} className="header-icon-btn" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
                                                         <Icons.Trash />
                                                     </button>
                                                 </div>
@@ -1238,28 +1304,27 @@
                                 {/* Asset Accumulation Ledger Table */}
                                 <div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                        <h3 className="card-subtitle">Accumulation Ledger</h3>
+                                        <h3 className="card-subtitle" style={{ margin: 0 }}>Accumulation Phase Ledger</h3>
                                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                                            Age {config.current_age} to {config.target_age}
+                                            Age {config.current_age} to {config.target_age - 1}
                                         </span>
                                     </div>
-                                    <div className="swiss-table-container" style={{ maxHeight: '400px' }}>
+                                    <div className="swiss-table-container" style={{ maxHeight: '350px' }}>
                                         <table className="swiss-table">
                                             <thead>
                                                 <tr>
                                                     <th>Age</th>
                                                     <th>Gross Salary</th>
-                                                    <th>Net Income</th>
-                                                    <th>Invested</th>
-                                                    <th>Est. Cost</th>
-                                                    <th>Surplus</th>
-                                                    <th>Yield Gain</th>
-                                                    <th>Skim Ratio</th>
-                                                    <th>Extracted</th>
-                                                    <th>Real Discretionary Spend</th>
-                                                    <th>Nominal Bal</th>
-                                                    <th>Real Bal</th>
-                                                    <th>Event Record</th>
+                                                    <th>Net Take-Home</th>
+                                                    <th>Pension Addition</th>
+                                                    <th>ISA Addition</th>
+                                                    <th>Living Expenses</th>
+                                                    <th>Surplus Cash</th>
+                                                    <th>Pension Balance</th>
+                                                    <th>ISA Balance</th>
+                                                    <th>Nominal Combined</th>
+                                                    <th>Real Combined (Purchasing Power)</th>
+                                                    <th>Milestone Log</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1267,18 +1332,17 @@
                                                     <tr key={idx} className={row.eventLog ? 'highlighted' : ''}>
                                                         <td style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{row.age}</td>
                                                         <td>£{row.salary.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                                        <td style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>£{row.takeHome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                                        <td>£{row.added.toLocaleString(undefined, { maximumFractionDigits: 0 })} <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>({row.contrib_rate.toFixed(1)}%)</span></td>
+                                                        <td style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>£{row.netTakeHome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td style={{ color: '#00cc66' }}>£{row.pensionAdded.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td style={{ color: '#00a3ff' }}>£{row.isaAdded.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                                         <td>£{row.bills.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                                         <td style={{ color: row.discretionary >= 0 ? 'var(--text-primary)' : 'var(--swiss-red)' }}>
                                                             £{row.discretionary.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                                         </td>
-                                                        <td>£{row.interestEarned.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                                        <td>{row.skimRate.toFixed(1)}%</td>
-                                                        <td>£{row.interestDrawn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                                        <td style={{ fontWeight: 'bold', color: 'var(--swiss-red)' }}>£{row.realCombinedSpending.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                                        <td style={{ fontWeight: 'bold' }}>£{row.nominalBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                                        <td style={{ fontWeight: 'bold' }}>£{row.realBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td>£{row.pensionBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td>£{row.isaBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td style={{ fontWeight: 'bold' }}>£{row.nominalCombined.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td style={{ fontWeight: 'bold', color: 'var(--swiss-red)' }}>£{row.realCombined.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                                         <td style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>{row.eventLog}</td>
                                                     </tr>
                                                 ))}
@@ -1290,32 +1354,40 @@
                                 {/* Asset Decumulation Ledger Table */}
                                 <div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                        <h3 className="card-subtitle">Decumulation Ledger</h3>
+                                        <h3 className="card-subtitle" style={{ margin: 0 }}>Decumulation Phase Ledger (Tax-Managed)</h3>
                                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                                            Retirement Span
+                                            Retirement Span starting Age {config.target_age}
                                         </span>
                                     </div>
-                                    <div className="swiss-table-container" style={{ maxHeight: '400px' }}>
+                                    <div className="swiss-table-container" style={{ maxHeight: '350px' }}>
                                         <table className="swiss-table">
                                             <thead>
                                                 <tr>
                                                     <th>Age</th>
-                                                    <th>Opening Pool</th>
-                                                    <th>Assumed Growth ({config.retire_growth_percent}%)</th>
-                                                    <th>Outflow Demand (Nominal)</th>
-                                                    <th>Closing Pool (Nominal)</th>
-                                                    <th>Closing Pool (Real Base Purchasing Power)</th>
+                                                    <th>Opening Pension</th>
+                                                    <th>Opening ISA</th>
+                                                    <th>State Pension</th>
+                                                    <th>ISA Drawdown (Tax-Free)</th>
+                                                    <th>Pension Drawdown (Gross)</th>
+                                                    <th>Estimated Tax Paid</th>
+                                                    <th>Total Retirement Spend (Nominal)</th>
+                                                    <th>Closing Combined (Nominal)</th>
+                                                    <th>Closing Combined (Real Value)</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {retirementSimulation.simulationPoints.map((row, idx) => (
+                                                {decumulationData.simPoints.map((row, idx) => (
                                                     <tr key={idx}>
                                                         <td style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{row.age}</td>
-                                                        <td>£{row.openingBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                                        <td>£{row.interestEarned.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                                        <td style={{ color: 'var(--swiss-red)', fontWeight: 'bold' }}>£{row.spending.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                                        <td style={{ fontWeight: 'bold' }}>£{row.closingBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                                        <td style={{ fontWeight: 'bold', color: 'var(--swiss-red)' }}>£{row.realClosingBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td>£{row.openingPension.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td>£{row.openingISA.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td style={{ color: '#00cc66' }}>£{row.statePensionReceived.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td>£{row.withdrawnISA.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td>£{row.withdrawnPensionGross.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td style={{ color: 'var(--swiss-red)' }}>£{row.taxPaid.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td style={{ fontWeight: 'bold' }}>£{row.spendingDemanded.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td style={{ fontWeight: 'bold' }}>£{row.closingCombinedNominal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                        <td style={{ fontWeight: 'bold', color: 'var(--swiss-red)' }}>£{row.closingCombinedReal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -1326,37 +1398,37 @@
                             </div>
                         </div>
                     ) : (
-                        /* Structural planning guide utilizing .section-grid architecture from style.css */
+                        /* Structural planning guide utilizing style.css section architecture */
                         <div className="section-grid" style={{ minHeight: '50vh' }}>
                             <div className="section-sidebar">
-                                <span className="section-num">01 // STRUCTURAL THEORY</span>
-                                <h2 className="section-title">THEORETICAL PARADIGMS</h2>
+                                <span className="section-num">01 // REGULATORY LOGIC</span>
+                                <h2 className="section-title">UK WEALTH PLANNING STRUCTURE</h2>
                             </div>
                             <div className="section-content">
                                 <div className="item-row">
-                                    <div className="item-meta">PHASE I // CAPITALIZATION</div>
+                                    <div className="item-meta">WORKPLACE PENSIONS // ACCUMULATION</div>
                                     <div className="item-details">
-                                        <h3 className="item-heading">Structural Base Foundation</h3>
+                                        <h3 className="item-heading">Salary Sacrifice vs Net Pay Arrangements</h3>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                            Initial capitalization models assume aggressive focus on contribution rates early in the career timeline. Mitigating early lifestyle creep maximizes compound frequency. Interlocking early yield vectors offsets long-term liability exposures.
+                                            Under a Salary Sacrifice framework, employee contributions are deducted from gross earnings before Income Tax and National Insurance calculation, yielding immediate tax and NI savings. Net Pay arrangements also grant immediate Income Tax relief, but do not provide National Insurance savings. Lifetime retirement plans should monitor annual pension contributions to stay within the £60,000 statutory tax-free allowance limit.
                                         </p>
                                     </div>
                                 </div>
                                 <div className="item-row">
-                                    <div className="item-meta">PHASE II // MID-TIMELINE SPECIALIZATION</div>
+                                    <div className="item-meta">TAX WRAPPERS // ISA SYSTEM</div>
                                     <div className="item-details">
-                                        <h3 className="item-heading">Dynamic Income Scaling</h3>
+                                        <h3 className="item-heading">The £20,000 Individual Savings Account (ISA) Shield</h3>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                            Mid-trajectory events typically coincide with major capital outflows (real estate acquisition, life milestones). Transitioning into higher-tier professional brackets allows for concurrent rate scaling, offsetting temporal net outflows.
+                                            The Individual Savings Account (ISA) remains a highly versatile tool in UK wealth optimization. Although contributions must be sourced from post-tax earnings, capital returns and future withdrawals are completely exempt from UK Capital Gains and Income Taxes. Integrating an ISA alongside pension assets creates a valuable tax-free reserve to draw from in retirement.
                                         </p>
                                     </div>
                                 </div>
                                 <div className="item-row">
-                                    <div className="item-meta">PHASE III // DUAL ENGINE SUSTAINABILITY</div>
+                                    <div className="item-meta">DECUMULATION // WITHDRAWAL OPTIMIZATION</div>
                                     <div className="item-details">
-                                        <h3 className="item-heading">Optimized Harvesting Protocol</h3>
+                                        <h3 className="item-heading">Managing the 25% Tax-Free Lump Sum (UFPLS)</h3>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                            The inclusion of linear ramping interest skim rates allows mid-career portfolios to provide active utility. Striking a careful balance between reinvesting surplus return capital and withdrawing liquidity supports structural security across decades.
+                                            When taking pension benefits via Flexi-Access Drawdown or Uncrystallized Funds Pension Lump Sum (UFPLS) rules, 25% of each withdrawal is generally tax-free. The remaining 75% is treated as taxable pension income and is subject to standard UK Income Tax marginal rates (excluding National Insurance). This system models these dynamics annually to project potential retirement tax liabilities.
                                         </p>
                                     </div>
                                 </div>
@@ -1364,10 +1436,9 @@
                         </div>
                     )}
 
-                    {/* Minimalist Footnote Panel */}
                     <footer>
                         <div>PLANNING ENGINE SYSTEM / DUAL VECTOR PROJECTIONS</div>
-                        <div>ALL CALCULATIONS MODEL ASSUMED FISCAL VARIABLES. ACTUAL MARKET OUTCOMES WILL VARY.</div>
+                        <div>ALL CALCULATIONS MODEL ASSUMED UK FISCAL VARIABLES. ACTUAL MARKET AND POLICY OUTCOMES WILL VARY.</div>
                     </footer>
                 </div>
             );
@@ -1378,3 +1449,4 @@
     </script>
 </body>
 </html>
+--- END OF FILE finance.html ---
